@@ -1,0 +1,100 @@
+.fixed .column-date {
+    width: 6%;
+}
+
+.location_variation_table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.location_variation_table th,
+.location_variation_table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.location_variation_table th {
+    background-color: #f8f8f8;
+    font-weight: bold;
+}
+
+.location_variation_data {
+    margin: 10px 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#location_stock_price_options table {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+#location_stock_price_options table input[type="number"],
+#location_stock_price_options table input[type="text"] {
+    width: 100%;
+}
+
+.fixed .column-locations div {
+    margin-bottom: 5px; /* Space between location entries */
+}
+.fixed .column-locations{
+    width: max-content !important;
+}
+.outofstock {
+    background: #f8d7da;
+    color: #721c24;
+}
+.instock {
+    background: #c6e1c6;
+    color: #5b841b;
+}
+.na {
+    color: #999;
+}
+
+
+.location-stock-container, .location-price-container, .location-actions {
+    margin-bottom: 10px;
+}
+.location-stock-item, .location-price-item, .location-action-item {
+    margin-bottom: 5px;
+}
+.location-name {
+    font-weight: bold;
+}
+.location-tag {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+.product-thumbnail {
+    width: 50px;
+    height: auto;
+}
+
+.location-gross-profit-item,span.gross-profit-value.positive-profit {
+    display: flex;
+}
+.positive-profit {
+    color: #28a745;
+}
+
+.negative-profit {
+    color: #dc3545;
+}
+
+.zero-profit {
+    color: #6c757d;
+}
+
+.highlight {
+        border: 2px solid red; /* Highlight border */
+    }
+a.lwp-subtab.lwp-subtab-active {
+    color: #008dff;
+}
