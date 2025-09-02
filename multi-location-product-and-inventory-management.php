@@ -1073,3 +1073,75 @@ function mulopimfwc_delete_user_location()
 
     wp_send_json_success(array('message' => 'Location deleted successfully'));
 }
+
+
+
+
+
+
+
+
+require_once plugin_dir_path(__FILE__) . 'includes/analytics.php';
+
+class mulopimfwc_analytics_main
+{
+    private $analytics;
+
+    public function __construct()
+    {
+        global $mulopimfwc_options;
+        // Initialize analytics with the correct plugin file path
+        $this->analytics = new mulopimfwc_anaylytics(
+            '04',
+            'https://plugincy.com/wp-json/product-analytics/v1',
+            "1.0.1",
+            'One Page Quick Checkout for WooCommerce',
+            __FILE__ // Pass the main plugin file
+        );
+
+        add_action('admin_footer',  array($this->analytics, "add_deactivation_feedback_form"));
+
+        // Plugin hooks
+        add_action('init', array($this, 'init'));
+        if (!isset($mulopimfwc_options["allow_data_share"]) || (isset($mulopimfwc_options["allow_data_share"])  && $mulopimfwc_options["allow_data_share"] === 'on')) {
+            add_action('admin_init', array($this, 'admin_init'));
+        }
+
+        // Handle deactivation feedback AJAX
+        add_action('wp_ajax_send_deactivation_feedback', array($this, 'handle_deactivation_feedback'));
+    }
+
+    public function init()
+    {
+        // Any initialization code
+    }
+
+    public function admin_init()
+    {
+        // Send analytics data on first activation or weekly
+        $this->maybe_send_analytics();
+    }
+
+    private function maybe_send_analytics()
+    {
+        $last_sent = get_option('onepaquc_analytics_last_sent', 0);
+        $week_ago = strtotime('-1 week');
+
+        if ($last_sent < $week_ago) {
+            $this->analytics->send_tracking_data();
+            update_option('onepaquc_analytics_last_sent', time());
+        }
+    }
+
+    public function handle_deactivation_feedback()
+    {
+        check_ajax_referer('deactivation_feedback', 'nonce');
+
+        $reason = sanitize_text_field(wp_unslash($_POST['reason'] ?? ''));
+        $this->analytics->send_deactivation_data($reason);
+
+        wp_die();
+    }
+}
+
+new mulopimfwc_analytics_main();

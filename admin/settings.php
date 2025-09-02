@@ -1372,6 +1372,17 @@ class mulopimfwc_settings
             'mulopimfwc_location_manager_section'
         );
 
+        // Add "Enable Location Manager Role" field
+        add_settings_field(
+            'allow_data_share',
+            __('Contribute to Plugincy', 'multi-location-product-and-inventory-management'),
+            function () {
+                $this->render_advance_checkbox("allow_data_share", __("We collect non-sensitive technical details from your website, like the PHP version and features usage, to help us troubleshoot issues faster, make informed development decisions, and build features that truly benefit you.", 'multi-location-product-and-inventory-management'));
+            },
+            'location-advance-settings',
+            'mulopimfwc_location_manager_section'
+        );
+
         // Add section for Customer Location Settings
         add_settings_section(
             'mulopimfwc_customer_location_section',
