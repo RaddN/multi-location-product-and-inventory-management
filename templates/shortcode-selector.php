@@ -4,11 +4,11 @@ if (!defined('ABSPATH')) exit;
 // Template for the store location selector shortcode
 ?>
 <div class="lwp-shortcode-store-selector <?php echo esc_attr($atts['class']); ?>">
-    <?php if ($atts['show_title'] === 'yes'): ?>
+    <?php if ($atts['show_title'] === 'on'): ?>
         <h3 class="lwp-shortcode-title"><?php echo esc_html($atts['title']); ?></h3>
     <?php endif; ?>
 
-   <?php if ($atts['enable_user_locations'] === 'yes'): ?>
+   <?php if ($atts['enable_user_locations'] === 'on'): ?>
     <!-- <div class="lwp-user-location-features">
         <div class="address-content" id="address-trigger">
             <span class="address-label-icon">📍</span>
@@ -61,7 +61,7 @@ if (!defined('ABSPATH')) exit;
                         //     foreach ($user_locations as $location) {
                         //         $selected = (isset($_COOKIE['mulopimfwc_user_location']) && $_COOKIE['mulopimfwc_user_location'] === $location['id']) ? 'selected' : '';
                                 ?>
-                                <div class="saved-location-item <?php //echo esc_attr($selected); ?>" data-location-id="<?php echo esc_attr($location['id']); ?>">
+                                <div class="saved-location-item <?php //echo esc_attr($selected); ?>" data-location-id="<?php //echo esc_attr($location['id']); ?>">
                                     <div class="location-info">
                                         <span class="location-label"><?php //echo esc_html($location['label']); ?></span>
                                         <span class="location-address"><?php //echo esc_html($location['address']); ?></span>
@@ -81,17 +81,17 @@ if (!defined('ABSPATH')) exit;
                         ?>
                     </div>
                 </div>
-            <?php endif; ?>
+            <?php //endif; ?>
 
             <div class="location-actions-container">
                 <button type="button" class="button button-primary lwp-use-current-location-btn">
                     <?php //_e('Use Current Location', 'multi-location-product-and-inventory-management'); ?>
                 </button>
-                <?php if ($is_user_logged_in): ?>
+                <?php //if ($is_user_logged_in): ?>
                     <button type="button" class="button lwp-add-location-btn">
                         <?php //_e('Add New Location', 'multi-location-product-and-inventory-management'); ?>
                     </button>
-                <?php endif; ?>
+                <?php //endif; ?>
             </div>
         </div>
     </div> -->
@@ -308,7 +308,7 @@ if (!defined('ABSPATH')) exit;
             }
         }
     </style>
-<?php //endif; ?>
+<?php endif; ?>
 
     <form id="lwp-shortcode-selector-form" class="lwp-selector-form">
         <?php wp_nonce_field('mulopimfwc_shortcode_selector', 'mulopimfwc_shortcode_selector_nonce'); ?>
@@ -321,7 +321,7 @@ if (!defined('ABSPATH')) exit;
             $child_counts = array();
             $depth_map = array();
             $max_depth = 0;
-            $show_count = isset($atts["show_count"]) && $atts["show_count"] === "yes";
+            $show_count = isset($atts["show_count"]) && $atts["show_count"] === "on";
 
             // First pass: identify all parent-child relationships and depths
             foreach ($locations as $location) {
@@ -387,7 +387,7 @@ if (!defined('ABSPATH')) exit;
                     <select id="<?php echo esc_html($select_id); ?>" class="lwp-shortcode-selector-dropdown" data-level="<?php echo esc_html($level); ?>">
                         <option value=""><?php echo esc_html($placeholder); ?></option>
 
-                        <?php if ($level == 0 && $is_admin_or_manager && $show_all_products_admin === 'yes'): ?>
+                        <?php if ($level == 0 && $is_admin_or_manager && $show_all_products_admin === 'on'): ?>
                             <option value="all-products" <?php echo ($selected_location === 'all-products') ? 'selected' : ''; ?>>
                                 <?php echo esc_html_e('All Products', 'multi-location-product-and-inventory-management'); ?>
                             </option>
@@ -420,19 +420,19 @@ if (!defined('ABSPATH')) exit;
             <select id="lwp-shortcode-selector" class="lwp-location-dropdown">
                 <option value=""><?php echo esc_html($atts['placeholder'] ?? '-- Select a Store --'); ?></option>
 
-                <?php if ($is_admin_or_manager && $show_all_products_admin === 'yes'): ?>
+                <?php if ($is_admin_or_manager && $show_all_products_admin === 'on'): ?>
                     <?php $selected = ($selected_location === 'all-products') ? 'selected' : ''; ?>
                     <option value="all-products" <?php echo esc_attr($selected); ?>><?php echo esc_html_e('All Products', 'multi-location-product-and-inventory-management'); ?></option>
                 <?php endif; ?>
 
                 <?php if (!empty($locations) && !is_wp_error($locations)): ?>
                     <?php
-                    if ($atts["herichical"] === "yes") {
+                    if ($atts["herichical"] === "on") {
                         // Organize locations into a hierarchical structure
                         $parent_locations = array();
                         $child_locations = array();
                         $child_counts = array();
-                        $show_count = isset($atts["show_count"]) && $atts["show_count"] === "yes";
+                        $show_count = isset($atts["show_count"]) && $atts["show_count"] === "on";
 
                         foreach ($locations as $location) {
                             if ($location->parent == 0) {
@@ -480,7 +480,7 @@ if (!defined('ABSPATH')) exit;
             <input type="hidden" id="lwp-selected-store-shortcode" name="mulopimfwc_selected_store" value="<?php echo esc_attr($selected_location); ?>">
         <?php endif; ?>
 
-        <?php if ($atts['show_button'] === 'yes'): ?>
+        <?php if ($atts['show_button'] === 'on'): ?>
             <button type="button" class="button lwp-shortcode-submit">
                 <?php echo esc_html($atts['button_text'] ?? 'Change Location'); ?>
             </button>
@@ -566,9 +566,9 @@ if (!defined('ABSPATH')) exit;
     $parent_children_json = wp_json_encode($parent_children_map);
     $child_counts_json = wp_json_encode($child_counts);
     $show_count_js = $show_count ? 'true' : 'false';
-    $auto_submit_js = $atts['show_button'] === 'no' ? 'true' : 'false';
+    $auto_submit_js = $atts['show_button'] === 'off' ? 'true' : 'false';
     $max_depth_js = (int)$max_depth;
-    $use_select2 = $atts["use_select2"] === "yes";
+    $use_select2 = $atts["use_select2"] === "on";
     $select2_init = $use_select2 ? "$('.lwp-shortcode-selector-dropdown').select2();" : "";
 
     $inline_js = <<<JS
@@ -635,9 +635,9 @@ JS;
 
 else:
 
-    $use_select2 = $atts["use_select2"] === "yes";
-    $show_button = $atts['show_button'] === 'yes';
-    $auto_submit_js = $atts['show_button'] === 'no' ? 'true' : 'false';
+    $use_select2 = $atts["use_select2"] === "on";
+    $show_button = $atts['show_button'] === 'on';
+    $auto_submit_js = $atts['show_button'] === 'off' ? 'true' : 'false';
 
     $inline_js = <<<JS
 jQuery(document).ready(function($) {

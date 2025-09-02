@@ -1,4 +1,4 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     const modal = document.getElementById('lwp-store-selector-modal');
     const modalDropdown = document.getElementById('lwp-selected-store');
     const modalSubmit = document.getElementById('lwp-store-selector-submit');
@@ -9,10 +9,10 @@ jQuery(document).ready(function($) {
             url: mulopimfwc_locationWiseProducts.ajaxUrl,
             method: 'POST',
             data: { action: 'check_cart_products' },
-            success: function(response) {
+            success: function (response) {
                 callback(response.success ? response.data.cartHasProducts : false);
             },
-            error: function() {
+            error: function () {
                 callback(false);
             }
         });
@@ -24,10 +24,10 @@ jQuery(document).ready(function($) {
             url: mulopimfwc_locationWiseProducts.ajaxUrl,
             method: 'POST',
             data: { action: 'clear_cart' },
-            success: function() {
+            success: function () {
                 window.location.href = window.location.href.split('?')[0];
             },
-            error: function() {
+            error: function () {
                 alert('Failed to clear the cart. Please try again.');
             }
         });
@@ -35,10 +35,15 @@ jQuery(document).ready(function($) {
 
     // Modal logic for changing store location
     if (modal && modalDropdown && modalSubmit) {
-        modalSubmit.addEventListener('click', function() {
+        modalSubmit.addEventListener('click', function () {
             const selectedStore = modalDropdown.value;
             if (selectedStore) {
-                document.cookie = "mulopimfwc_store_location=" + selectedStore + "; path=/";
+                const date = new Date();
+                const days = mulopimfwc_locationWiseProducts.cookie_expiry || 30; // Default to 30 days
+                date.setTime(date.getTime() + days * 86400);
+                const expires = `expires=${date.toUTCString()}`;
+
+                document.cookie = `mulopimfwc_store_location=${selectedStore}; ${expires}; path=/`;
                 modal.style.display = 'none';
                 location.reload();
             } else {
@@ -47,7 +52,7 @@ jQuery(document).ready(function($) {
         });
     }
 
-    $('#lwp-shortcode-selector-form').on('change', function() {
+    $('#lwp-shortcode-selector-form').on('change', function () {
         const dropdown = $(this).find('#lwp-selected-store-shortcode');
         const selectedStore = dropdown.val();
 
@@ -57,23 +62,33 @@ jQuery(document).ready(function($) {
         }
 
         if (selectedStore === 'all-products') {
-            document.cookie = "mulopimfwc_store_location=all-products; path=/";
+            const date = new Date();
+            const days = mulopimfwc_locationWiseProducts.cookie_expiry || 30; // Default to 30 days
+            date.setTime(date.getTime() + days * 86400);
+            const expires = `expires=${date.toUTCString()}`;
+
+            document.cookie = `mulopimfwc_store_location=all-products; ${expires}; path=/`;
             location.reload();
             return;
         }
 
         // Check if the cart has products before changing the store location
-        checkCartHasProducts(function(cartHasProducts) {
+        checkCartHasProducts(function (cartHasProducts) {
             if (cartHasProducts) {
-                const confirmChange = confirm("Do you want to change the store location? Your cart will be emptied.");
-                if (!confirmChange) {
-                    dropdown.val(getCookie('mulopimfwc_store_location') || '');
-                    return;
+                if (mulopimfwc_locationWiseProducts.location_change_notification) {
+                    const confirmChange = confirm("Do you want to change the store location? Your cart will be emptied.");
+                    if (!confirmChange) {
+                        dropdown.val(getCookie('mulopimfwc_store_location') || '');
+                        return;
+                    }
                 }
             }
+            const date = new Date();
+            const days = mulopimfwc_locationWiseProducts.cookie_expiry || 30; // Default to 30 days
+            date.setTime(date.getTime() + days * 86400);
+            const expires = `expires=${date.toUTCString()}`;
 
-            // Set the cookie and clear the cart
-            document.cookie = "mulopimfwc_store_location=" + selectedStore + "; path=/";
+            document.cookie = `mulopimfwc_store_location=${selectedStore}; ${expires}; path=/`;
             clearCartAndReload();
         });
     });
@@ -85,10 +100,9 @@ jQuery(document).ready(function($) {
     }
 });
 
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     // Listen for variation change events
-    $('.variations_form').on('found_variation', function(event, variation) {
-        console.log(variation);
+    $('.variations_form').on('found_variation', function (event, variation) {
         if (variation.location_data) {
             var location_data = variation.location_data;
             var location_info_html = '';
@@ -102,7 +116,7 @@ jQuery(document).ready(function($) {
                 if (parseInt(location_data.location_stock) > 0) {
                     location_info_html += '<span class="in-stock">' + location_data.location_stock + ' in stock</span>';
                 } else {
-                    if (location_data.location_backorders === 'no') {
+                    if (location_data.location_backorders === 'off') {
                         location_info_html += '<span class="out-of-stock">Out of stock</span>';
                     } else {
                         location_info_html += '<span class="on-backorder">Available on backorder</span>';
@@ -127,6 +141,6 @@ jQuery(document).ready(function($) {
         } else {
             // Hide location info when no variation is selected
             $('.location-specific-info').fadeOut(500);
-        }            
+        }
     });
 });
