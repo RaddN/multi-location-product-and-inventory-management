@@ -4,7 +4,7 @@
  * Plugin Name: Multi Location Product & Inventory Management for WooCommerce
  * Plugin URI: https://plugincy.com/multi-location-product-and-inventory-management
  * Description: Filter WooCommerce products by store locations with a location selector for customers.
- * Version: 1.0.1
+ * Version: 1.0.5.14
  * Author: plugincy
  * Author URI: https://plugincy.com/
  * Text Domain: multi-location-product-and-inventory-management
@@ -18,6 +18,15 @@
 
 if (!defined('ABSPATH')) exit;
 
+if (!defined('MULTI_LOCATION_PLUGIN_URL')) {
+    define('MULTI_LOCATION_PLUGIN_URL', plugin_dir_url(__FILE__));
+}
+
+if (!defined('mulopimfwc_VERSION')) {
+    define("mulopimfwc_VERSION", "1.0.5.14");
+}
+
+
 if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
     add_action('admin_notices', function () {
         echo '<div class="error"><p>' . esc_html_e('Location Wise Products requires WooCommerce to be installed and active.', 'multi-location-product-and-inventory-management') . '</p></div>';
@@ -25,11 +34,11 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
     return;
 }
 
-global $mulopimfwc_locations, $allowed_tags, $mulopimfwc_options;
+global $mulopimfwc_locations, $mulopimfwc_allowed_tags, $mulopimfwc_options;
 
 function mulopimfwc_get_values()
 {
-    global $mulopimfwc_locations, $allowed_tags, $mulopimfwc_options;
+    global $mulopimfwc_locations, $mulopimfwc_allowed_tags, $mulopimfwc_options;
 
     // Check if taxonomy exists
     if (!taxonomy_exists('mulopimfwc_store_location')) {
@@ -45,20 +54,1063 @@ function mulopimfwc_get_values()
     $mulopimfwc_options = get_option('mulopimfwc_display_options') ?:
         [
             'enable_location_stock' => 'on',
-            'enable_location_price' => 'on'
+            'enable_location_price' => 'on',
+            'enable_location_backorder' => 'on',
+            'enable_all_locations' => 'on',
+            'location_change_notification' => 'on',
+            'display_location_single_product' => 'on', 
+            'allow_data_share' => 'on', 
+            'strict_filtering' => 'enabled',
+
         ];
+    $mulopimfwc_allowed_tags = array(
+        'a' => array(
+            'href' => array(),
+            'title' => array(),
+            'class' => array(),
+            'target' => array(), // Allow target attribute for links
+            'style' => array(),
+            'id' => array(),
+        ),
+        'strong' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'em' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'li' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'div' => array(
+            'class' => array(),
+            'id' => array(), // Allow id for divs
+            'style' => array(),
+        ),
+        'img' => array(
+            'src' => array(),
+            'alt' => array(),
+            'class' => array(),
+            'width' => array(), // Allow width attribute
+            'height' => array(), // Allow height attribute
+            'style' => array(),
+            'id' => array(),
+            'data-src' => array(),
+        ),
+        'h1' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow h1
+        'h2' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'h3' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow h3
+        'h4' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow h4
+        'h5' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow h5
+        'h6' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow h6
+        'span' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'p' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'br' => array(
+            'style' => array(),
+            'class' => array(),
+        ), // Allow line breaks
+        'blockquote' => array(
+            'cite' => array(), // Allow cite attribute for blockquotes
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'table' => array(
+            'class' => array(),
+            'style' => array(), // Allow inline styles
+            'id' => array(),
+        ),
+        'tr' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'td' => array(
+            'class' => array(),
+            'colspan' => array(), // Allow colspan attribute
+            'rowspan' => array(), // Allow rowspan attribute
+            'style' => array(),
+            'id' => array(),
+        ),
+        'th' => array(
+            'class' => array(),
+            'colspan' => array(),
+            'rowspan' => array(),
+            'style' => array(),
+            'id' => array(),
+        ),
+        'ul' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow unordered lists
+        'ol' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+        ), // Allow ordered lists
+        'script' => array(
+            'type' => array(),
+            'src' => array(),
+            'async' => array(),
+            'defer' => array(),
+            'charset' => array(),
+        ), // Be cautious with scripts
+
+        // Style and Meta Tags
+        'style' => array(
+            'type' => array(),
+            'media' => array(),
+            'scoped' => array(),
+        ),
+        'link' => array(
+            'rel' => array(),
+            'href' => array(),
+            'type' => array(),
+            'media' => array(),
+            'sizes' => array(),
+            'hreflang' => array(),
+            'crossorigin' => array(),
+        ),
+        'meta' => array(
+            'name' => array(),
+            'content' => array(),
+            'http-equiv' => array(),
+            'charset' => array(),
+            'property' => array(), // For Open Graph
+        ),
+        'title' => array(),
+        'base' => array(
+            'href' => array(),
+            'target' => array(),
+        ),
+
+        // Document Structure
+        'html' => array(
+            'lang' => array(),
+            'dir' => array(),
+            'class' => array(),
+            'style' => array(),
+        ),
+        'head' => array(),
+        'body' => array(
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+            'onload' => array(),
+        ),
+        'header' => array(
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+            'role' => array(),
+        ),
+        'footer' => array(
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+            'role' => array(),
+        ),
+        'nav' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+            'role' => array(),
+        ),
+        'main' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+            'role' => array(),
+        ),
+        'section' => array(
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+            'role' => array(),
+        ),
+        'article' => array(
+            'class' => array(),
+            'style' => array(),
+            'id' => array(),
+            'role' => array(),
+        ),
+        'aside' => array(
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+            'role' => array(),
+        ),
+
+        // Form Elements
+        'form' => array(
+            'action' => array(),
+            'method' => array(),
+            'style' => array(),
+            'enctype' => array(),
+            'target' => array(),
+            'name' => array(),
+            'id' => array(),
+            'class' => array(),
+            'autocomplete' => array(),
+            'novalidate' => array(),
+            'data-mobile-style' => array(),
+            'data-product_show_settings' => array(),
+            'data-product_selector' => array(),
+            'data-pagination_selector' => array(),
+            'data-layout' => array(),
+        ),
+        'input' => array(
+            'type' => array(),
+            'name' => array(),
+            'value' => array(),
+            'style' => array(),
+            'placeholder' => array(),
+            'id' => array(),
+            'class' => array(),
+            'required' => array(),
+            'disabled' => array(),
+            'readonly' => array(),
+            'checked' => array(),
+            'selected' => array(),
+            'multiple' => array(),
+            'min' => array(),
+            'max' => array(),
+            'step' => array(),
+            'pattern' => array(),
+            'maxlength' => array(),
+            'minlength' => array(),
+            'size' => array(),
+            'autocomplete' => array(),
+            'autofocus' => array(),
+            'form' => array(),
+            'formaction' => array(),
+            'formmethod' => array(),
+            'formtarget' => array(),
+            'formnovalidate' => array(),
+            'accept' => array(),
+            'alt' => array(),
+            'src' => array(),
+            'width' => array(),
+            'height' => array(),
+        ),
+        'textarea' => array(
+            'name' => array(),
+            'id' => array(),
+            'class' => array(),
+            'placeholder' => array(),
+            'rows' => array(),
+            'style' => array(),
+            'cols' => array(),
+            'required' => array(),
+            'disabled' => array(),
+            'readonly' => array(),
+            'maxlength' => array(),
+            'minlength' => array(),
+            'wrap' => array(),
+            'autocomplete' => array(),
+            'autofocus' => array(),
+            'form' => array(),
+        ),
+        'select' => array(
+            'name' => array(),
+            'id' => array(),
+            'class' => array(),
+            'multiple' => array(),
+            'size' => array(),
+            'required' => array(),
+            'style' => array(),
+            'disabled' => array(),
+            'autofocus' => array(),
+            'form' => array(),
+        ),
+        'option' => array(
+            'value' => array(),
+            'selected' => array(),
+            'style' => array(),
+            'disabled' => array(),
+            'label' => array(),
+        ),
+        'optgroup' => array(
+            'label' => array(),
+            'style' => array(),
+            'disabled' => array(),
+        ),
+        'button' => array(
+            'type' => array(),
+            'name' => array(),
+            'value' => array(),
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+            'disabled' => array(),
+            'form' => array(),
+            'formaction' => array(),
+            'formmethod' => array(),
+            'formtarget' => array(),
+            'formnovalidate' => array(),
+            'autofocus' => array(),
+        ),
+        'label' => array(
+            'for' => array(),
+            'form' => array(),
+            'id' => array(),
+            'class' => array(),
+            'style' => array(),
+        ),
+        'fieldset' => array(
+            'disabled' => array(),
+            'form' => array(),
+            'style' => array(),
+            'name' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'legend' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'datalist' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'output' => array(
+            'for' => array(),
+            'form' => array(),
+            'name' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'plugrogress' => array(
+            'value' => array(),
+            'max' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'meter' => array(
+            'value' => array(),
+            'min' => array(),
+            'max' => array(),
+            'low' => array(),
+            'style' => array(),
+            'high' => array(),
+            'optimum' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+
+        // Media Elements
+        'audio' => array(
+            'src' => array(),
+            'controls' => array(),
+            'autoplay' => array(),
+            'style' => array(),
+            'loop' => array(),
+            'muted' => array(),
+            'preload' => array(),
+            'crossorigin' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'video' => array(
+            'src' => array(),
+            'controls' => array(),
+            'autoplay' => array(),
+            'loop' => array(),
+            'muted' => array(),
+            'preload' => array(),
+            'style' => array(),
+            'poster' => array(),
+            'width' => array(),
+            'height' => array(),
+            'crossorigin' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'source' => array(
+            'src' => array(),
+            'style' => array(),
+            'type' => array(),
+            'media' => array(),
+            'sizes' => array(),
+            'srcset' => array(),
+        ),
+        'track' => array(
+            'kind' => array(),
+            'src' => array(),
+            'style' => array(),
+            'srclang' => array(),
+            'label' => array(),
+            'default' => array(),
+        ),
+        'embed' => array(
+            'src' => array(),
+            'type' => array(),
+            'width' => array(),
+            'height' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'object' => array(
+            'data' => array(),
+            'type' => array(),
+            'style' => array(),
+            'name' => array(),
+            'width' => array(),
+            'height' => array(),
+            'form' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'param' => array(
+            'name' => array(),
+            'value' => array(),
+            'style' => array(),
+        ),
+        'iframe' => array(
+            'src' => array(),
+            'srcdoc' => array(),
+            'name' => array(),
+            'width' => array(),
+            'style' => array(),
+            'height' => array(),
+            'sandbox' => array(),
+            'allow' => array(),
+            'allowfullscreen' => array(),
+            'loading' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+
+        // Interactive Elements
+        'details' => array(
+            'open' => array(),
+            'id' => array(),
+            'class' => array(),
+            'style' => array(),
+        ),
+        'summary' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'dialog' => array(
+            'open' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+
+        // Text Content Elements
+        'pre' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'code' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'kbd' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'samp' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'var' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'small' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'sub' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'sup' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'mark' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'del' => array(
+            'datetime' => array(),
+            'style' => array(),
+            'cite' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'ins' => array(
+            'datetime' => array(),
+            'style' => array(),
+            'cite' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'q' => array(
+            'cite' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'cite' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'abbr' => array(
+            'title' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'dfn' => array(
+            'title' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'time' => array(
+            'datetime' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'data' => array(
+            'value' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'address' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Table Elements (Enhanced)
+        'caption' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'thead' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'tbody' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'tfoot' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'colgroup' => array(
+            'span' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+        'col' => array(
+            'span' => array(),
+            'style' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+
+        // Definition Lists
+        'dl' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'dt' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'dd' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Ruby Annotations
+        'ruby' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'rt' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'rp' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Bidirectional Text
+        'bdi' => array(
+            'dir' => array(),
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'bdo' => array(
+            'dir' => array(),
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Web Components
+        'template' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'slot' => array(
+            'name' => array(),
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Math and Science
+        'math' => array(
+            'display' => array(),
+            'xmlns' => array(),
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Canvas and Graphics
+        'canvas' => array(
+            'width' => array(),
+            'height' => array(),
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+
+        // Obsolete but sometimes needed
+        'center' => array(
+            'id' => array(),
+            'style' => array(),
+            'class' => array(),
+        ),
+        'font' => array(
+            'size' => array(),
+            'style' => array(),
+            'color' => array(),
+            'face' => array(),
+            'id' => array(),
+            'class' => array(),
+        ),
+
+        // SVG Tags
+        'svg' => array(
+            'xmlns' => array(),
+            'viewbox' => array(), // lowercase
+            'viewBox' => array(), // camelCase (standard)
+            'width' => array(),
+            'height' => array(),
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+            'preserveAspectRatio' => array(),
+            'version' => array(),
+            'x' => array(),
+            'y' => array(),
+            'fill' => array(),
+        ),
+        'g' => array(
+            'class' => array(),
+            'id' => array(),
+            'transform' => array(),
+            'style' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'opacity' => array(),
+        ),
+        'path' => array(
+            'd' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'stroke-dasharray' => array(),
+            'stroke-linecap' => array(),
+            'stroke-linejoin' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'circle' => array(
+            'cx' => array(),
+            'cy' => array(),
+            'r' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'ellipse' => array(
+            'cx' => array(),
+            'cy' => array(),
+            'rx' => array(),
+            'ry' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'rect' => array(
+            'x' => array(),
+            'y' => array(),
+            'width' => array(),
+            'height' => array(),
+            'rx' => array(),
+            'ry' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'line' => array(
+            'x1' => array(),
+            'y1' => array(),
+            'x2' => array(),
+            'y2' => array(),
+            'class' => array(),
+            'id' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'stroke-dasharray' => array(),
+            'stroke-linecap' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'polyline' => array(
+            'points' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'stroke-dasharray' => array(),
+            'stroke-linecap' => array(),
+            'stroke-linejoin' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'polygon' => array(
+            'points' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'stroke-width' => array(),
+            'stroke-dasharray' => array(),
+            'stroke-linecap' => array(),
+            'stroke-linejoin' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'text' => array(
+            'x' => array(),
+            'y' => array(),
+            'dx' => array(),
+            'dy' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'font-family' => array(),
+            'font-size' => array(),
+            'font-weight' => array(),
+            'text-anchor' => array(),
+            'dominant-baseline' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'tspan' => array(
+            'x' => array(),
+            'y' => array(),
+            'dx' => array(),
+            'dy' => array(),
+            'class' => array(),
+            'id' => array(),
+            'fill' => array(),
+            'stroke' => array(),
+            'font-family' => array(),
+            'font-size' => array(),
+            'font-weight' => array(),
+            'text-anchor' => array(),
+            'dominant-baseline' => array(),
+            'opacity' => array(),
+            'style' => array(),
+        ),
+        'use' => array(
+            'href' => array(),
+            'xlink:href' => array(),
+            'x' => array(),
+            'y' => array(),
+            'width' => array(),
+            'height' => array(),
+            'class' => array(),
+            'id' => array(),
+            'transform' => array(),
+            'style' => array(),
+        ),
+        'defs' => array(
+            'class' => array(),
+            'id' => array(),
+            'style' => array(),
+        ),
+        'symbol' => array(
+            'id' => array(),
+            'viewBox' => array(),
+            'class' => array(),
+            'style' => array(),
+            'preserveAspectRatio' => array(),
+        ),
+        'marker' => array(
+            'id' => array(),
+            'markerWidth' => array(),
+            'markerHeight' => array(),
+            'refX' => array(),
+            'refY' => array(),
+            'style' => array(),
+            'orient' => array(),
+            'markerUnits' => array(),
+            'class' => array(),
+        ),
+        'linearGradient' => array(
+            'id' => array(),
+            'x1' => array(),
+            'y1' => array(),
+            'style' => array(),
+            'x2' => array(),
+            'y2' => array(),
+            'gradientUnits' => array(),
+            'gradientTransform' => array(),
+            'class' => array(),
+        ),
+        'lineargradient' => array(
+            'id' => array(),
+            'x1' => array(),
+            'y1' => array(),
+            'style' => array(),
+            'x2' => array(),
+            'y2' => array(),
+            'gradientUnits' => array(),
+            'gradientTransform' => array(),
+            'class' => array(),
+        ),
+        'radialGradient' => array(
+            'id' => array(),
+            'cx' => array(),
+            'cy' => array(),
+            'style' => array(),
+            'r' => array(),
+            'fx' => array(),
+            'fy' => array(),
+            'gradientUnits' => array(),
+            'gradientTransform' => array(),
+            'class' => array(),
+        ),
+        'radialgradient' => array(
+            'id' => array(),
+            'cx' => array(),
+            'cy' => array(),
+            'r' => array(),
+            'style' => array(),
+            'fx' => array(),
+            'fy' => array(),
+            'gradientUnits' => array(),
+            'gradientTransform' => array(),
+            'class' => array(),
+        ),
+        'stop' => array(
+            'offset' => array(),
+            'stop-color' => array(),
+            'stop-opacity' => array(),
+            'class' => array(),
+            'style' => array(),
+        ),
+        'clipPath' => array(
+            'id' => array(),
+            'class' => array(),
+            'style' => array(),
+            'clipPathUnits' => array(),
+        ),
+        'mask' => array(
+            'id' => array(),
+            'class' => array(),
+            'style' => array(),
+            'maskUnits' => array(),
+            'maskContentUnits' => array(),
+            'x' => array(),
+            'y' => array(),
+            'width' => array(),
+            'height' => array(),
+        ),
+        'pattern' => array(
+            'id' => array(),
+            'x' => array(),
+            'y' => array(),
+            'width' => array(),
+            'style' => array(),
+            'height' => array(),
+            'patternUnits' => array(),
+            'patternContentUnits' => array(),
+            'patternTransform' => array(),
+            'viewBox' => array(),
+            'class' => array(),
+        ),
+        'filter' => array(
+            'id' => array(),
+            'x' => array(),
+            'y' => array(),
+            'style' => array(),
+            'width' => array(),
+            'height' => array(),
+            'filterUnits' => array(),
+            'primitiveUnits' => array(),
+            'class' => array(),
+        ),
+        'feGaussianBlur' => array(
+            'in' => array(),
+            'style' => array(),
+            'stdDeviation' => array(),
+            'result' => array(),
+        ),
+        'feOffset' => array(
+            'in' => array(),
+            'dx' => array(),
+            'style' => array(),
+            'dy' => array(),
+            'result' => array(),
+        ),
+        'feDropShadow' => array(
+            'dx' => array(),
+            'dy' => array(),
+            'style' => array(),
+            'stdDeviation' => array(),
+            'flood-color' => array(),
+            'flood-opacity' => array(),
+        ),
+        'image' => array(
+            'x' => array(),
+            'y' => array(),
+            'width' => array(),
+            'style' => array(),
+            'height' => array(),
+            'href' => array(),
+            'xlink:href' => array(),
+            'preserveAspectRatio' => array(),
+            'class' => array(),
+            'id' => array(),
+            'opacity' => array(),
+            'transform' => array(),
+        ),
+    );
 }
 
 add_action('init', 'mulopimfwc_get_values', 20);
 
 require_once plugin_dir_path(__FILE__) . 'admin/settings.php';
 require_once plugin_dir_path(__FILE__) . 'admin/dashboard.php';
+require_once plugin_dir_path(__FILE__) . 'admin/license-page.php';
 require_once plugin_dir_path(__FILE__) . 'admin/stock-central.php';
 require_once plugin_dir_path(__FILE__) . 'admin/admin.php';
 require_once plugin_dir_path(__FILE__) . 'includes/product-display.php';
 require_once plugin_dir_path(__FILE__) . 'admin/location-based-everythings.php';
 require_once plugin_dir_path(__FILE__) . 'admin/location-managers.php';
 require_once plugin_dir_path(__FILE__) . 'includes/product-location-selector-single.php';
+require_once plugin_dir_path(__FILE__) . 'admin/import-export-settings.php';
 
 class mulopimfwc_Location_Wise_Products
 {
@@ -147,6 +1199,7 @@ class mulopimfwc_Location_Wise_Products
             $location_data[] = [
                 'id' => $location->term_id,
                 'name' => $location->name,
+                'parent' =>$location->parent,
                 'selected' => in_array($location->slug, $location_selected),
             ];
         }
@@ -224,7 +1277,7 @@ class mulopimfwc_Location_Wise_Products
     public function cymulopimfwc_enqueue_admin_scripts($hook)
     {
         // Only on product location page
-        // if ($hook !== 'woocommerce_page_product-locations') {
+        // if ($hook !== 'multi-location-product-and-inventory-management-settings') {
         //     return;
         // }
 
@@ -232,7 +1285,7 @@ class mulopimfwc_Location_Wise_Products
             'mulopimfwc-multi-location-product-and-inventory-managements-admin',
             plugin_dir_url(__FILE__) . 'assets/js/admin.js',
             ['jquery'],
-            '1.0.1',
+            '1.0.5.14',
             true
         );
 
@@ -252,7 +1305,7 @@ class mulopimfwc_Location_Wise_Products
             'mulopimfwc-multi-location-product-and-inventory-managements-admin',
             plugin_dir_url(__FILE__) . 'assets/css/admin.css',
             [],
-            '1.0.1'
+            '1.0.5.14'
         );
     }
 
@@ -358,10 +1411,10 @@ class mulopimfwc_Location_Wise_Products
         $cookie_expiry = isset($mulopimfwc_options["location_cookie_expiry"]) && is_numeric($mulopimfwc_options["location_cookie_expiry"])
                 ? (int)$mulopimfwc_options["location_cookie_expiry"]
                 : 30;
-
-        wp_enqueue_style('mulopimfwc_style', plugins_url('assets/css/style.css', __FILE__), [], '1.0.1');
+        
+        wp_enqueue_style('mulopimfwc_style', plugins_url('assets/css/style.css', __FILE__), [], '1.0.5.14');
         wp_enqueue_style('mulopimfwc_select2', plugins_url('assets/css/select2.min.css', __FILE__), [], '4.1.0');
-        wp_enqueue_script('mulopimfwc_script', plugins_url('assets/js/script.js', __FILE__), ['jquery'], '1.0.1', true);
+        wp_enqueue_script('mulopimfwc_script', plugins_url('assets/js/script.js', __FILE__), ['jquery'], '1.0.5.14', true);
         wp_enqueue_script('mulopimfwc_select2', plugins_url('assets/js/select2.min.js', __FILE__), ['jquery'], '4.1.0', true);
 
         wp_localize_script('mulopimfwc_script', 'mulopimfwc_locationWiseProducts', [
@@ -374,18 +1427,6 @@ class mulopimfwc_Location_Wise_Products
 
         wp_enqueue_style('leaflet', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), '1.7.1');
         wp_enqueue_script('leaflet', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array('jquery'), '1.7.1', true);
-
-        wp_enqueue_script('mulopimfwc_script_map', plugins_url('assets/js/location-features.js', __FILE__), ['jquery'], '1.0.1', true);
-        
-
-        // Localize script with configuration
-        wp_localize_script('mulopimfwc_script_map', 'mulopimfwc_locationWiseProducts_map', array(
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'enableUserLocations' => 'on',
-            'nonce' => wp_create_nonce('mulopimfwc_nonce'),
-            'cookie_expiry' => $cookie_expiry
-            
-        ));
     }
 
     private function get_current_location()
@@ -448,6 +1489,8 @@ class mulopimfwc_Location_Wise_Products
             'herichical' => '',
             'show_count' => '',
             'enable_user_locations' => 'off', // New attribute
+            'max_width' => '300',
+            'multi_line' => 'off'
         ], $atts);
 
         $is_user_logged_in = is_user_logged_in();
@@ -528,7 +1571,7 @@ class mulopimfwc_Location_Wise_Products
 
         $location_text = count($location_names) === 1 ? $location_names[0] : implode(', ', $location_names);
         $separator = isset($options['separator']) ? $options['separator'] : ' - ';
-        $format = isset($options['display_format']) ? $options['display_format'] : 'append';
+        $format = isset($options['display_format']) ? $options['display_format'] : 'none';
 
         switch ($format) {
             case 'prepend':
@@ -547,7 +1590,7 @@ class mulopimfwc_Location_Wise_Products
     {
         $location = $this->get_current_location();
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         if (!$location || $location === 'all-products') {
             return true;
@@ -572,7 +1615,7 @@ class mulopimfwc_Location_Wise_Products
     {
         $location = $this->get_current_location();
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         if (!$location || $location === 'all-products') {
             return $products;
@@ -637,8 +1680,6 @@ class mulopimfwc_Location_Wise_Products
 
     public function filter_recently_viewed_products()
     {
-        global $mulopimfwc_options;
-
         $location = $this->get_filtered_location('recently_viewed');
 
         if (!$location) {
@@ -660,10 +1701,7 @@ class mulopimfwc_Location_Wise_Products
 
         if (count($filtered_products) !== count($viewed_products)) {
             $filtered_cookie = implode('|', $filtered_products);
-            $days = isset($mulopimfwc_options["location_cookie_expiry"]) && is_numeric($mulopimfwc_options["location_cookie_expiry"])
-                ? (int)$mulopimfwc_options["location_cookie_expiry"]
-                : 30;
-            wc_setcookie('woocommerce_recently_viewed', $filtered_cookie, time() + 86400 * $days);
+            wc_setcookie('woocommerce_recently_viewed', $filtered_cookie, time() + 60 * 60 * 24 * 30);
         }
     }
 
@@ -719,7 +1757,7 @@ class mulopimfwc_Location_Wise_Products
 
         $tax_query = (array) $query->get('tax_query');
         $options = $this->get_display_options();
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         if ($enable_all_locations === 'on') {
             $tax_query[] = [
@@ -742,92 +1780,6 @@ class mulopimfwc_Location_Wise_Products
             ];
         }
         $query->set('tax_query', $tax_query);
-
-        // Add custom ordering based on product priority display setting
-        $product_priority_display = isset($options['product_priority_display']) ? $options['product_priority_display'] : 'mixed';
-
-        if ($product_priority_display !== 'mixed' && $enable_all_locations === 'on') {
-            add_filter('posts_join', [$this, 'custom_product_join'], 10, 2);
-            add_filter('posts_orderby', [$this, 'custom_product_orderby'], 10, 2);
-        }
-    }
-
-    /**
-     * Add custom JOIN clause for location-based ordering
-     *
-     * @param string $join The JOIN clause
-     * @param WP_Query $query The WordPress query object
-     * @return string Modified JOIN clause
-     */
-    public function custom_product_join($join, $query)
-    {
-        global $wpdb;
-
-        // Only apply to main product queries
-        if (!$query->is_main_query() || !is_post_type_archive('product') && !is_shop() && !is_product_taxonomy()) {
-            return $join;
-        }
-
-        $location = $this->get_current_location();
-        if (!$location) {
-            return $join;
-        }
-
-        $term = get_term_by('slug', $location, 'mulopimfwc_store_location');
-        if (!$term || is_wp_error($term)) {
-            return $join;
-        }
-
-        $term_taxonomy_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT term_taxonomy_id FROM {$wpdb->term_taxonomy} WHERE term_id = %d AND taxonomy = %s",
-            $term->term_id,
-            'mulopimfwc_store_location'
-        ));
-
-        if ($term_taxonomy_id) {
-            $join .= " LEFT JOIN {$wpdb->term_relationships} AS location_tr 
-                        ON ({$wpdb->posts}.ID = location_tr.object_id AND location_tr.term_taxonomy_id = " . intval($term_taxonomy_id) . ") ";
-        }
-
-        // Remove this filter after execution
-        remove_filter('posts_join', [$this, 'custom_product_join'], 10);
-
-        return $join;
-    }
-
-    /**
-     * Add custom ORDER BY clause for location-based ordering
-     *
-     * @param string $orderby The ORDER BY clause
-     * @param WP_Query $query The WordPress query object
-     * @return string Modified ORDER BY clause
-     */
-    public function custom_product_orderby($orderby, $query)
-    {
-        global $wpdb;
-
-        // Only apply to main product queries
-        if (!$query->is_main_query() || !is_post_type_archive('product') && !is_shop() && !is_product_taxonomy()) {
-            return $orderby;
-        }
-
-        $options = $this->get_display_options();
-        $product_priority_display = isset($options['product_priority_display']) ? $options['product_priority_display'] : 'mixed';
-
-        if ($product_priority_display === 'location_first') {
-            $priority_value_for_location = 1;
-            $priority_value_for_global = 2;
-        } else { // global_first
-            $priority_value_for_location = 2;
-            $priority_value_for_global = 1;
-        }
-
-        $custom_orderby = "CASE WHEN location_tr.object_id IS NOT NULL THEN {$priority_value_for_location} ELSE {$priority_value_for_global} END, ";
-
-        // Remove this filter after execution
-        remove_filter('posts_orderby', [$this, 'custom_product_orderby'], 10);
-
-        return $custom_orderby . $orderby;
     }
 
 
@@ -914,7 +1866,7 @@ class mulopimfwc_Location_Wise_Products
     }
     function custom_admin_styles()
     {
-        wp_enqueue_style('mulopimfwc-custom-admin-style', plugin_dir_url(__FILE__) . 'assets/css/admin-style.css', array(), "1.0.1");
+        wp_enqueue_style('mulopimfwc-custom-admin-style', plugin_dir_url(__FILE__) . 'assets/css/admin-style.css', array(), "1.0.5.14");
     }
 }
 
@@ -964,7 +1916,7 @@ function mulopimfwc_save_user_location()
     $lng = isset($_POST['lng']) ? floatval($_POST['lng']) : 0;
 
     // Check if we're editing an existing location
-    $location_id = isset($_POST['location_id']) ? sanitize_text_field($_POST['location_id']) : uniqid();
+    $location_id = isset($_POST['location_id']) && !empty($_POST['location_id']) ? sanitize_text_field($_POST['location_id']) : uniqid();
 
     // Prepare location data
     $location_data = array(
@@ -1017,7 +1969,7 @@ function mulopimfwc_save_user_location()
         ));
     } else {
         // For non-logged-in users, we can't save the location permanently.
-        // We'll just return the location data to be used temporarily.
+        wc_setcookie('mulopimfwc_user_location', $location_data['address'] , time() + 60 * 60 * 24 * 30);
         wp_send_json_success(array(
             'logged_in' => false,
             'location_id' => $location_id,
@@ -1027,18 +1979,18 @@ function mulopimfwc_save_user_location()
     }
 }
 
+
+
 // AJAX handler for deleting user location
 add_action('wp_ajax_mulopimfwc_delete_user_location', 'mulopimfwc_delete_user_location');
 
 function mulopimfwc_delete_user_location()
 {
-    // Check nonce
-    if (!isset($_POST['mulopimfwc_shortcode_selector_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['mulopimfwc_shortcode_selector_nonce'])), 'mulopimfwc_shortcode_selector')) {
-        return;
-    }
 
     // Get location ID
     $location_id = isset($_POST['location_id']) ? sanitize_text_field($_POST['location_id']) : '';
+
+    error_log("You are deleting: " . $location_id);
 
     if (empty($location_id)) {
         wp_send_json_error(array('message' => 'Invalid location ID'));
@@ -1081,6 +2033,8 @@ function mulopimfwc_delete_user_location()
 
 
 
+
+
 require_once plugin_dir_path(__FILE__) . 'includes/analytics.php';
 
 class mulopimfwc_analytics_main
@@ -1094,8 +2048,8 @@ class mulopimfwc_analytics_main
         $this->analytics = new mulopimfwc_anaylytics(
             '04',
             'https://plugincy.com/wp-json/product-analytics/v1',
-            "1.0.1",
-            'One Page Quick Checkout for WooCommerce',
+            "1.0.5.14",
+            'Multi Location Product & Inventory Management for WooCommerce',
             __FILE__ // Pass the main plugin file
         );
 

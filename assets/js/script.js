@@ -1,6 +1,5 @@
 jQuery(document).ready(function ($) {
     const modal = document.getElementById('lwp-store-selector-modal');
-    const modalDropdown = document.getElementById('lwp-selected-store');
     const modalSubmit = document.getElementById('lwp-store-selector-submit');
 
     // Function to check if the cart has products
@@ -16,6 +15,13 @@ jQuery(document).ready(function ($) {
                 callback(false);
             }
         });
+    }
+
+
+    // Get location id of selected saved item
+    function getSelectedLocationId() {
+        var selectedItem = $('.saved-location-item.selected');
+        return selectedItem.length ? selectedItem.data('location-id') : null;
     }
 
     // Function to clear the cart and reload the page
@@ -34,16 +40,12 @@ jQuery(document).ready(function ($) {
     }
 
     // Modal logic for changing store location
-    if (modal && modalDropdown && modalSubmit) {
+    if (modal && modalSubmit) {
         modalSubmit.addEventListener('click', function () {
+            const modalDropdown = document.getElementById('lwp-selected-store');
             const selectedStore = modalDropdown.value;
             if (selectedStore) {
-                const date = new Date();
-                const days = mulopimfwc_locationWiseProducts.cookie_expiry || 30; // Default to 30 days
-                date.setTime(date.getTime() + days * 86400);
-                const expires = `expires=${date.toUTCString()}`;
-
-                document.cookie = `mulopimfwc_store_location=${selectedStore}; ${expires}; path=/`;
+                document.cookie = "mulopimfwc_store_location=" + selectedStore + "; path=/";
                 modal.style.display = 'none';
                 location.reload();
             } else {
@@ -53,8 +55,10 @@ jQuery(document).ready(function ($) {
     }
 
     $('#lwp-shortcode-selector-form').on('change', function () {
-        const dropdown = $(this).find('#lwp-selected-store-shortcode');
+        const dropdown = $(this).find('#lwp-shortcode-selector');
         const selectedStore = dropdown.val();
+        var locationId = getSelectedLocationId();
+
 
         if (!selectedStore) {
             alert('Please select a store location.');
@@ -62,33 +66,33 @@ jQuery(document).ready(function ($) {
         }
 
         if (selectedStore === 'all-products') {
-            const date = new Date();
-            const days = mulopimfwc_locationWiseProducts.cookie_expiry || 30; // Default to 30 days
-            date.setTime(date.getTime() + days * 86400);
-            const expires = `expires=${date.toUTCString()}`;
-
-            document.cookie = `mulopimfwc_store_location=all-products; ${expires}; path=/`;
+            document.cookie = "mulopimfwc_store_location=all-products; path=/";
             location.reload();
             return;
         }
 
         // Check if the cart has products before changing the store location
         checkCartHasProducts(function (cartHasProducts) {
-            if (cartHasProducts) {
-                if (mulopimfwc_locationWiseProducts.location_change_notification) {
-                    const confirmChange = confirm("Do you want to change the store location? Your cart will be emptied.");
-                    if (!confirmChange) {
-                        dropdown.val(getCookie('mulopimfwc_store_location') || '');
-                        return;
+            if (cartHasProducts && mulopimfwc_locationWiseProducts.location_change_notification) {
+                const confirmChange = confirm("Do you want to change the store location? Your cart will be emptied.");
+                if (!confirmChange) {
+                    dropdown.val(getCookie('mulopimfwc_store_location') || '');
+                    $('.saved-location-item').removeClass('selected');
+                    $('.saved-location-item[data-location-id="' + getCookie('mulopimfwc_user_location') + '"]').addClass('selected');
+                    var selectedAddress = $('.saved-location-item.selected').data('address');
+                    var label = $('.saved-location-item.selected').data('label');
+                    if (selectedAddress) {
+                        $('.address-text').text(label + ' - ' + selectedAddress);
                     }
+                    return;
                 }
             }
-            const date = new Date();
-            const days = mulopimfwc_locationWiseProducts.cookie_expiry || 30; // Default to 30 days
-            date.setTime(date.getTime() + days * 86400);
-            const expires = `expires=${date.toUTCString()}`;
 
-            document.cookie = `mulopimfwc_store_location=${selectedStore}; ${expires}; path=/`;
+            // Set the cookie and clear the cart
+            document.cookie = "mulopimfwc_store_location=" + selectedStore + "; path=/";
+            if (locationId) {
+                document.cookie = `mulopimfwc_user_location=${locationId};path=/`;
+            }
             clearCartAndReload();
         });
     });
@@ -103,6 +107,7 @@ jQuery(document).ready(function ($) {
 jQuery(document).ready(function ($) {
     // Listen for variation change events
     $('.variations_form').on('found_variation', function (event, variation) {
+        console.log(variation);
         if (variation.location_data) {
             var location_data = variation.location_data;
             var location_info_html = '';

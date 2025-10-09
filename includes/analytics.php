@@ -198,7 +198,7 @@ class mulopimfwc_anaylytics
     private function get_license_key()
     {
         // Example: Get license from options
-        return get_option('mulopimfwclicense_key', '');
+        return get_option('mulopimfwc_license_key', '');
     }
 
     /**

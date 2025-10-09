@@ -152,7 +152,7 @@ add_action('woocommerce_product_data_panels', function () {
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="<?php echo $is_stock_management_enabled === "on" ? 5 : 4; ?>">
+                            <td colspan="4">
                                 <div id="plugincy_message" style="display: none; color: red;">Please select a location first. <span id="highlightButton" style="cursor:pointer;">Highlight Locations</span></div>
                             </td>
                         </tr>
@@ -379,14 +379,14 @@ function mulopimfwc_get_location_term_id($location_slug)
     return $location ? $location->term_id : false;
 }
 
-if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])['enable_location_price'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])['enable_location_price'] ?? 'on') === 'on' && !is_admin()) {
     // Override regular price for simple products
     add_filter('woocommerce_product_get_regular_price', function ($price, $product) {
         if ($product->is_type('variation')) {
             return $price; // Handle variations separately
         }
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
         $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', array('fields' => 'slugs'));
         if ($enable_all_locations === 'on' && empty($terms)) {
             return $price; // Use default WooCommerce price
@@ -410,7 +410,7 @@ if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])
         }
 
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', array('fields' => 'slugs'));
 
@@ -431,7 +431,7 @@ if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])
     }, 10, 2);
 }
 
-if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_stock' => 'on'])['enable_location_stock'] ?? 'on') === 'on' && !is_admin()) {
     // Override stock quantity for simple products
     add_filter('woocommerce_product_get_stock_quantity', function ($quantity, $product) {
         if ($product->is_type('variation')) {
@@ -439,7 +439,7 @@ if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') ==
         }
 
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', array('fields' => 'slugs'));
         if ($enable_all_locations === 'on' && empty($terms)) {
@@ -459,7 +459,7 @@ if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') ==
     }, 10, 2);
 }
 
-if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'on'])['enable_location_backorder'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'on'])['enable_location_backorder'] ?? 'on') === 'on' && !is_admin()) {
 
     // Override backorder setting for simple products
     add_filter('woocommerce_product_get_backorders', function ($backorders, $product) {
@@ -467,7 +467,7 @@ if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'o
             return $backorders; // Handle variations separately
         }
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', array('fields' => 'slugs'));
         if ($enable_all_locations === 'on' && empty($terms)) {
@@ -486,7 +486,7 @@ if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'o
         return !empty($location_backorders) ? $location_backorders : $backorders;
     }, 10, 2);
 }
-if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_stock' => 'on'])['enable_location_stock'] ?? 'on') === 'on' && !is_admin()) {
     // Override product stock status based on location stock
     add_filter('woocommerce_product_get_stock_status', function ($status, $product) {
         if ($product->is_type('variation')) {
@@ -497,7 +497,7 @@ if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') ==
         $location_id = mulopimfwc_get_location_term_id($location_slug);
         $product_id = $product->get_id();
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         if (!$location_id) {
             return $status;
@@ -543,7 +543,7 @@ if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') ==
     }, 10, 2);
 }
 
-if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_stock' => 'on'])['enable_location_stock'] ?? 'on') === 'on' && !is_admin()) {
 
     // Override variation stock
     add_filter('woocommerce_product_variation_get_stock_quantity', function ($quantity, $variation) {
@@ -560,7 +560,7 @@ if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') ==
     }, 10, 2);
 }
 
-if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'on'])['enable_location_backorder'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'on'])['enable_location_backorder'] ?? 'on') === 'on' && !is_admin()) {
     // Override variation backorders
     add_filter('woocommerce_product_variation_get_backorders', function ($backorders, $variation) {
         $location_slug = mulopimfwc_get_current_store_location();
@@ -576,7 +576,7 @@ if ((get_option('mulopimfwc_display_options', ['enable_location_backorder' => 'o
     }, 10, 2);
 }
 
-if ((get_option('mulopimfwc_display_options')['enable_location_stock'] ?? '') === 'on' && !is_admin()) {
+if ((get_option('mulopimfwc_display_options', ['enable_location_stock' => 'on'])['enable_location_stock'] ?? 'on') === 'on' && !is_admin()) {
     // Handle stock reduction when order is placed
     add_action('woocommerce_reduce_order_stock', function ($order) {
         $location_slug = mulopimfwc_get_current_store_location();
@@ -679,7 +679,7 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
     return $passed;
 }, 10, 5);
 
-if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])['enable_location_price'] ?? '') === 'on') {
+if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])['enable_location_price'] ?? 'on') === 'on') {
     // Override the final price for simple products
     add_filter('woocommerce_product_get_price', function ($price, $product) {
         if ($product->is_type('variation')) {
@@ -784,7 +784,7 @@ if ((get_option('mulopimfwc_display_options', ['enable_location_price' => 'on'])
 add_action('woocommerce_single_product_summary', function () {
     global $product;
     $options = get_option('mulopimfwc_display_options', []);
-    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
     if (!is_object($product)) {
         $product = wc_get_product(get_the_ID());
     }
@@ -863,7 +863,7 @@ add_action('wp_footer', function () {
     if (is_product()) {
         global $product;
         $options = get_option('mulopimfwc_display_options', []);
-        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+        $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
 
         if ($product->is_type('variable')) {
             $location_slug = mulopimfwc_get_current_store_location();
@@ -882,7 +882,7 @@ add_action('wp_footer', function () {
 
             if (is_wp_error($terms) || ! in_array($location_slug, $terms, true)) {
                 // Register a dummy stylesheet to attach inline styles
-                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.1');
+                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.5.14');
                 wp_enqueue_style('mulopimfwc-custom-woocommerce-style');
                 wp_add_inline_style('mulopimfwc-custom-woocommerce-style', '.variations_form.cart { display: none; }');
             }
@@ -902,7 +902,7 @@ add_action('wp_footer', function () {
             }
             if (is_wp_error($terms) || ! in_array($location_slug, $terms, true)) {
                 // Register a dummy stylesheet to attach inline styles
-                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.1');
+                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.5.14');
                 wp_enqueue_style('mulopimfwc-custom-woocommerce-style');
                 wp_add_inline_style('mulopimfwc-custom-woocommerce-style', 'form.cart { display: none; }');
             }
@@ -919,7 +919,7 @@ $user_roles = $current_user->roles;
 
 // Check if the current user role has permission
 if (array_intersect($user_roles, $selected_roles)) {
-    if ((get_option('mulopimfwc_display_options')['enable_location_information'] ?? '') === 'on') {
+    if ((get_option('mulopimfwc_display_options', ['enable_location_information' => 'off'])['enable_location_information'] ?? 'off') === 'on') {
         // Add location-specific stock and price display on product pages
         add_action('woocommerce_single_product_summary', 'mulopimfwc_display_location_specific_stock_info', 25);
         add_action('woocommerce_shop_loop_item_title', 'mulopimfwc_display_location_specific_stock_info_loop', 15);
@@ -932,7 +932,7 @@ function mulopimfwc_display_location_specific_stock_info()
 {
     global $product;
     $options = get_option('mulopimfwc_display_options', []);
-    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
     // Get current location
     $location_slug = mulopimfwc_get_current_store_location();
     if (empty($location_slug) || $location_slug === 'all-products') {
@@ -1014,7 +1014,7 @@ function mulopimfwc_display_location_specific_stock_info_loop()
 {
     global $product;
     $options = get_option('mulopimfwc_display_options', []);
-    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
     // Get current location
     $location_slug = mulopimfwc_get_current_store_location();
     if (empty($location_slug) || $location_slug === 'all-products') {
@@ -1028,7 +1028,7 @@ function mulopimfwc_display_location_specific_stock_info_loop()
     }
 
     $options = get_option('mulopimfwc_display_options', []);
-    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
     $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
     if ($enable_all_locations === 'on' && empty($terms)) {
         return; // Show default WooCommerce notice
@@ -1074,7 +1074,7 @@ function mulopimfwc_add_location_data_to_variations($variation_data, $product, $
         return $variation_data; // No specific location selected
     }
     $options = get_option('mulopimfwc_display_options', []);
-    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
     $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
     if ($enable_all_locations === 'on' && empty($terms)) {
         return $variation_data;
@@ -1111,7 +1111,7 @@ function mulopimfwc_add_location_data_to_variations($variation_data, $product, $
 
 
 
-if (array_intersect($user_roles, $selected_roles) && (get_option('mulopimfwc_display_options', ['enable_location_information' => 'on'])['enable_location_information'] ?? '') === 'on') {
+if (array_intersect($user_roles, $selected_roles) && (get_option('mulopimfwc_display_options', ['enable_location_information' => 'off'])['enable_location_information'] ?? 'off') === 'on') {
 
     /**
      * Add stock status to product category/archive pages
@@ -1122,7 +1122,7 @@ function mulopimfwc_display_location_stock_status_in_loop()
 {
     global $product;
     $options = get_option('mulopimfwc_display_options', []);
-    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : '';
+    $enable_all_locations = isset($options['enable_all_locations']) ? $options['enable_all_locations'] : 'on';
     // Get current location
     $location_slug = mulopimfwc_get_current_store_location();
     if (empty($location_slug) || $location_slug === 'all-products') {

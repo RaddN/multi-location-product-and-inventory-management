@@ -272,8 +272,8 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     return ucfirst(str_replace('attribute_pa_', '', $key)) . ': ' . $value;
                 }, array_keys($variation['attributes']), $variation['attributes']));
 
-                $purchase_price = rand(1, 100);
-                $default_price = rand(90, 1000);
+                $purchase_price = get_post_meta($variation['id'], '_purchase_price', true);
+                $default_price = $variation['price'];
 
                 $output .= '<div class="variation-gross-profit-item">';
                 $output .= '<strong>' . esc_html($variation_title) . '</strong>';
@@ -287,7 +287,8 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                 // Location-specific gross profit
                 if (!empty($item['location_terms'])) {
                     foreach ($item['location_terms'] as $location) {
-                        $price_to_use = rand(90, 110);
+                        $location_price = get_post_meta($variation['id'], '_location_sale_price_' . $location->term_id, true);
+                        $price_to_use = !empty($location_price) ? $location_price : $default_price;
 
                         $output .= '<div class="location-gross-profit-item">';
                         $output .= '<span class="location-name">' . esc_html($location->name) . ':</span> ';
@@ -299,8 +300,8 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                 $output .= '</div>';
             }
         } else {
-            $purchase_price = rand(80, 100);
-            $default_price = rand(90, 110);
+            $purchase_price = get_post_meta($item['id'], '_purchase_price', true);
+            $default_price = get_post_meta($item['id'], "_price", true);
 
             // Default gross profit
             $output .= '<div class="location-gross-profit-item">';
@@ -311,7 +312,8 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
             // Location-specific gross profit
             if (!empty($item['location_terms'])) {
                 foreach ($item['location_terms'] as $location) {
-                    $price_to_use = rand(90, 110);
+                    $location_price = get_post_meta($item['id'], '_location_sale_price_' . $location->term_id, true);
+                    $price_to_use = !empty($location_price) ? $location_price : $default_price;
 
                     $output .= '<div class="location-gross-profit-item">';
                     $output .= '<span class="location-name">' . esc_html($location->name) . ':</span> ';
