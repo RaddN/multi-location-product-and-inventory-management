@@ -537,13 +537,13 @@ class MULOPIMFWC_Location_Managers
         check_ajax_referer('mulopimfwc_location_managers_nonce', 'nonce');
 
         if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(['message' => __('Permission denied', 'multi-location-product-and-inventory-management')]);
+            wp_send_json_error(['message' => esc_html_e('Permission denied', 'multi-location-product-and-inventory-management')]);
         }
 
         $manager_id = intval($_POST['manager_id']);
 
         if (empty($manager_id)) {
-            wp_send_json_error(['message' => __('Invalid manager ID', 'multi-location-product-and-inventory-management')]);
+            wp_send_json_error(['message' => esc_html_e('Invalid manager ID', 'multi-location-product-and-inventory-management')]);
         }
 
         // Remove location manager role and revert to subscriber
@@ -554,7 +554,7 @@ class MULOPIMFWC_Location_Managers
         delete_user_meta($manager_id, 'mulopimfwc_assigned_locations');
         delete_user_meta($manager_id, 'mulopimfwc_manager_capabilities');
 
-        wp_send_json_success(['message' => __('Location manager deleted successfully', 'multi-location-product-and-inventory-management')]);
+        wp_send_json_success(['message' => esc_html_e('Location manager deleted successfully', 'multi-location-product-and-inventory-management')]);
     }
 
     /**
@@ -878,10 +878,12 @@ class MULOPIMFWC_Order_Filter
         }
 
         if (!empty($location_names)) {
+            
             echo '<div class="notice notice-info"><p>' .
                 sprintf(
+                    // translators: %s: List of location names (e.g. "Sydney, Melbourne")
                     esc_html__('You are viewing orders for: %s', 'multi-location-product-and-inventory-management'),
-                    '<strong>' . implode(', ', $location_names) . '</strong>'
+                    '<strong>' . implode(', ', esc_attr($location_names)) . '</strong>'
                 ) .
                 '</p></div>';
         }
@@ -1083,7 +1085,7 @@ class MULOPIMFWC_Order_Count_Filter
     /**
      * Check if current user is a location manager
      */
-    private function is_current_user_location_manager()
+    public function is_current_user_location_manager()
     {
         if (!is_user_logged_in()) {
             return false;

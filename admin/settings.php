@@ -1233,14 +1233,12 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             'location_selector_layout',
             __('Location Selector Layout', 'multi-location-product-and-inventory-management'),
             function () {
-                $options = get_option('mulopimfwc_display_options', ['location_selector_layout' => 'list']);
-                $value = isset($options['location_selector_layout']) ? $options['location_selector_layout'] : 'list';
         ?>
             <label class="mulopimfwc_pro_only">
-                <select disabled name="mulopimfwc_display_options[location_selector_layout]">
-                    <option value="list" <?php selected($value, 'list'); ?>><?php echo esc_html_e('List View', 'multi-location-product-and-inventory-management'); ?></option>
-                    <option value="buttons" <?php selected($value, 'buttons'); ?>><?php echo esc_html_e('Button Style', 'multi-location-product-and-inventory-management'); ?></option>
-                    <option value="select" <?php selected($value, 'select'); ?>><?php echo esc_html_e('Select Dropdown', 'multi-location-product-and-inventory-management'); ?></option>
+                <select disabled name="_pro[pro]">
+                    <option value="list" selected><?php echo esc_html_e('List View', 'multi-location-product-and-inventory-management'); ?></option>
+                    <option value="buttons"><?php echo esc_html_e('Button Style', 'multi-location-product-and-inventory-management'); ?></option>
+                    <option value="select"><?php echo esc_html_e('Select Dropdown', 'multi-location-product-and-inventory-management'); ?></option>
                 </select>
                 <p class="description"><?php echo esc_html_e('Choose the layout style for the location selector on single product pages.', 'multi-location-product-and-inventory-management'); ?></p>
             </label>

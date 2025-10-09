@@ -441,7 +441,7 @@ class MULOPIMFWC_Product_Location_Selector
      */
     private function get_layout_type(): string
     {
-        $layout = $this->options['location_selector_layout'] ?? 'list';
+        $layout = 'list';
         return in_array($layout, self::LAYOUTS, true) ? $layout : 'list';
     }
 
@@ -701,6 +701,7 @@ class MULOPIMFWC_Product_Location_Selector
 
         wp_send_json_success([
             'message' => sprintf(
+                // translators: %s: Name of the location that has been switched to.
                 __('Location changed to: %s', 'multi-location-product-and-inventory-management'),
                 $location_name
             ),
