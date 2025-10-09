@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 class mulopimfwc_License_Manager
 {
     private $api_url = 'https://plugincy.com/';
-    private $item_id = 697;
+    private $item_id = 10817;
     private $pro_plugin_file = 'multi-location-product-and-inventory-management-pro/multi-location-product-and-inventory-management-pro.php';
     private $pro_plugin_dir = 'multi-location-product-and-inventory-management-pro';
 
