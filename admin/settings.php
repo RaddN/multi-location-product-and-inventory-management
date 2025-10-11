@@ -1404,7 +1404,7 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             __('Export Plugin Settings', 'multi-location-product-and-inventory-management'),
             function () {
         ?>
-            <button type="button" id="mulopimfwc_export_settings" class="button button-secondary">
+            <button type="button" class="button button-secondary mulopimfwc_pro_only">
                 <span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
                 <?php echo esc_html_e('Export Settings', 'multi-location-product-and-inventory-management'); ?>
             </button>
@@ -1422,7 +1422,7 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             function () {
         ?>
             <input type="file" id="mulopimfwc_import_settings" accept=".json" style="display: none;">
-            <button type="button" id="mulopimfwc_import_settings_btn" class="button button-secondary">
+            <button type="button" class="button button-secondary mulopimfwc_pro_only">
                 <span class="dashicons dashicons-upload" style="margin-top: 3px;"></span>
                 <?php echo esc_html_e('Import Settings', 'multi-location-product-and-inventory-management'); ?>
             </button>
@@ -1440,7 +1440,7 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             __('Export Products with Location Data', 'multi-location-product-and-inventory-management'),
             function () {
         ?>
-            <button type="button" id="mulopimfwc_export_products" class="button button-secondary mulopimfwc_export_products" data-format="csv">
+            <button type="button" class="button button-secondary mulopimfwc_pro_only" data-format="csv">
                 <span class="dashicons dashicons-media-spreadsheet" style="margin-top: 3px;"></span>
                 <?php echo esc_html_e('Export to CSV', 'multi-location-product-and-inventory-management'); ?>
             </button>
@@ -2444,7 +2444,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                         <p class="tagline"><?php echo esc_html__('Manage products, inventory, and pricing across multiple store locations effortlessly', 'multi-location-product-and-inventory-management'); ?></p>
                     </div>
                     <div class="version-badge">
-                        <span><?php echo esc_html__('v. 1.0.2', 'multi-location-product-and-inventory-management'); ?></span>
+                        <span><?php echo esc_html__('v. 1.0.2.5', 'multi-location-product-and-inventory-management'); ?></span>
                     </div>
                 </div>
 

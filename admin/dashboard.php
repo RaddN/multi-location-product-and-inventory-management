@@ -47,8 +47,8 @@ class MULOPIMFWC_Dashboard
 
         // Enqueue necessary scripts and styles
         wp_enqueue_script('chart-js', plugin_dir_url(__FILE__) . '../assets/js/chart.min.js', array(), '3.9.1', true);
-        wp_enqueue_script('lwp-dashboard-js', plugin_dir_url(__FILE__) . '../assets/js/dashboard.js', array('jquery', 'chart-js'), "1.0.2", true);
-        wp_enqueue_style('lwp-dashboard-css', plugin_dir_url(__FILE__) . '../assets/css/dashboard.css', array(), "1.0.2");
+        wp_enqueue_script('lwp-dashboard-js', plugin_dir_url(__FILE__) . '../assets/js/dashboard.js', array('jquery', 'chart-js'), "1.0.2.5", true);
+        wp_enqueue_style('lwp-dashboard-css', plugin_dir_url(__FILE__) . '../assets/css/dashboard.css', array(), "1.0.2.5");
 
         // Initialize data arrays
         $product_counts = [];
@@ -321,7 +321,7 @@ class MULOPIMFWC_Dashboard
                             </div>
 
                         </div>
-                        <div class="lwp-stat-item">
+                        <div class="lwp-stat-item mulopimfwc_pro_only mulopimfwc_pro_only_blur">
                             <div class="lwp-stat-item-icon" style="background-color: #ffedd5;">
 
                                 <svg class="svg-inline--fa fa-chart-line" aria-hidden="true" data-prefix="fas" data-icon="chart-line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18">
