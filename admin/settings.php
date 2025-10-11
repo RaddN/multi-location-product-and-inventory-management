@@ -157,7 +157,7 @@ General Settings', 'multi-location-product-and-inventory-management'),
             'enable_location_information',
             __('Enable Location Information', 'multi-location-product-and-inventory-management'),
             function () {
-                $this->render_advance_checkbox("enable_location_information", __("Enable or disable location-specific information management.", 'multi-location-product-and-inventory-management'), 'off');
+                $this->render_advance_checkbox("enable_location_information", __("Enable or disable location-specific information management.", 'multi-location-product-and-inventory-management'));
             },
             'lwp-general-settings',
             'location_stock_general_section'
@@ -2444,7 +2444,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                         <p class="tagline"><?php echo esc_html__('Manage products, inventory, and pricing across multiple store locations effortlessly', 'multi-location-product-and-inventory-management'); ?></p>
                     </div>
                     <div class="version-badge">
-                        <span><?php echo esc_html__('v. 1.0.5.14', 'multi-location-product-and-inventory-management'); ?></span>
+                        <span><?php echo esc_html__('v. 1.0.2', 'multi-location-product-and-inventory-management'); ?></span>
                     </div>
                 </div>
 

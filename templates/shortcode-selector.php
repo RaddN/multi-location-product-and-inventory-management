@@ -300,9 +300,9 @@ JS;
     // Output inline script
     wp_add_inline_script('mulopimfwc_script', $inline_js);
 else:
-    $use_select2 = $atts["use_select2"] === "on";
-    $show_button = $atts['show_button'] === 'on';
-    $auto_submit_js = $atts['show_button'] === 'off' ? 'true' : 'false';
+    $use_select2 = ($atts['use_select2'] === 'on') ? 'true' : 'false';
+    $show_button = ($atts['show_button'] === 'on') ? 'true' : 'false';
+    $auto_submit_js = ($atts['show_button'] === 'off') ? 'true' : 'false';
     $inline_js = <<<JS
 jQuery(document).ready(function($) {
     if ($use_select2) {
