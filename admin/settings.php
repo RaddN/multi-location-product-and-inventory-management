@@ -2201,7 +2201,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                 $options = get_option('mulopimfwc_display_options', ['pickup_instructions' => '']);
                 $value = isset($options['pickup_instructions']) ? $options['pickup_instructions'] : '';
         ?>
-            <textarea name="mulopimfwc_display_options[pickup_instructions]" rows="3" class="large-text"><?php echo esc_textarea($value); ?></textarea>
+            <textarea disabled name="mulopimfwc_display_options[pickup_instructions]" rows="3" class="large-text"><?php echo esc_textarea($value); ?></textarea>
             <p class="description"><?php echo esc_html_e('Default pickup instructions shown to customers (can be customized per location).', 'multi-location-product-and-inventory-management'); ?></p>
         <?php
             },
@@ -2444,7 +2444,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                         <p class="tagline"><?php echo esc_html__('Manage products, inventory, and pricing across multiple store locations effortlessly', 'multi-location-product-and-inventory-management'); ?></p>
                     </div>
                     <div class="version-badge">
-                        <span><?php echo esc_html__('v. 1.0.2.5', 'multi-location-product-and-inventory-management'); ?></span>
+                        <span><?php echo esc_html__('v. 1.0.2', 'multi-location-product-and-inventory-management'); ?></span>
                     </div>
                 </div>
 
