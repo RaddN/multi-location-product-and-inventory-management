@@ -2065,7 +2065,7 @@ if (!function_exists('mulopimfwc_get_values')) {
             }
 
             // Handle deactivation feedback AJAX
-            add_action('wp_ajax_send_deactivation_feedback', array($this, 'handle_deactivation_feedback'));
+            add_action('wp_ajax_mulopimfwc_send_deactivation_feedback', array($this, 'handle_deactivation_feedback'));
         }
 
         public function init()
