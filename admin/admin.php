@@ -345,6 +345,18 @@ class MULOPIMFWC_Admin
             [new mulopimfwc_settings(), 'settings_page_content']
         );
 
+        if (class_exists('Mulopimfwc_Customer_Location_Insights')) {
+            add_submenu_page(
+                'multi-location-product-and-inventory-management',
+                __('Location Analytics', 'multi-location-product-and-inventory-management'),
+                __('Analytics', 'multi-location-product-and-inventory-management'),
+                'manage_woocommerce',
+                'mulopimfwc-analytics',
+                [$this, 'mulopimfwc_render_analytics_page_wrapper'] // Use a wrapper function instead
+            );
+        }
+
+
         // Add "Get Pro" submenu (external link)
         add_submenu_page(
             'multi-location-product-and-inventory-management',
@@ -354,6 +366,28 @@ class MULOPIMFWC_Admin
             'https://plugincy.com/multi-location-product-and-inventory-management/'
         );
     }
+
+
+    public function mulopimfwc_render_analytics_page_wrapper()
+    {
+        if (!class_exists('Mulopimfwc_Customer_Location_Insights')) {
+            echo '<div class="wrap"><h1>' . esc_html__('Analytics Not Available', 'multi-location-product-and-inventory-management') . '</h1>';
+            echo '<p>' . esc_html__('The analytics feature is not available. Please ensure all plugin files are properly loaded.', 'multi-location-product-and-inventory-management') . '</p></div>';
+            return;
+        }
+
+        $instance = Mulopimfwc_Customer_Location_Insights::get_instance();
+
+        if (!$instance || !method_exists($instance, 'render_analytics_page')) {
+            echo '<div class="wrap"><h1>' . esc_html__('Analytics Error', 'multi-location-product-and-inventory-management') . '</h1>';
+            echo '<p>' . esc_html__('Unable to load analytics page. Please contact support.', 'multi-location-product-and-inventory-management') . '</p></div>';
+            return;
+        }
+
+        $instance->render_analytics_page();
+    }
+
+
     /**
      * Add location column to orders table
      *
