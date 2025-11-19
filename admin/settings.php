@@ -1374,21 +1374,25 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             'mulopimfwc_store_locator_section'
         );
 
-        // Add "Map API Key" field
-        // add_settings_field(
-        //     'map_api_key',
-        //     __('Map API Key', 'multi-location-product-and-inventory-management'),
-        //     function () {
-        //         $options = get_option('mulopimfwc_display_options', ['map_api_key' => '']);
-        //         $value = isset($options['map_api_key']) ? $options['map_api_key'] : '';
-        // ?>
-        <!--      <input disabled type="text" name="mulopimfwc_display_options[map_api_key]" value="<?php //echo esc_attr($value); ?>" class="regular-text">
-             <p class="description"><?php //echo esc_html_e('Enter your API key for the selected map provider.', 'multi-location-product-and-inventory-management'); ?></p> -->
+        /*
+        add_settings_field(
+            'map_api_key',
+            __('Map API Key', 'multi-location-product-and-inventory-management'),
+            function () {
+                $options = get_option('mulopimfwc_display_options', ['map_api_key' => '']);
+                $value = isset($options['map_api_key']) ? $options['map_api_key'] : '';
+        ?>
+                <input disabled type="text" name="mulopimfwc_display_options[map_api_key]"
+                    value="<?php echo esc_attr($value); ?>" class="regular-text">
+                <p class="description">
+                    <?php echo esc_html_e('Enter your API key for the selected map provider.', 'multi-location-product-and-inventory-management'); ?>
+                </p>
         <?php
-        //     },
-        //     'lwp-store-locator-settings',
-        //     'mulopimfwc_store_locator_section'
-        // );
+            },
+            'lwp-store-locator-settings',
+            'mulopimfwc_store_locator_section'
+        );
+        */
 
         // Add "Default Map Zoom Level" field
         add_settings_field(
@@ -2304,7 +2308,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                         <p class="tagline"><?php echo esc_html__('Manage products, inventory, and pricing across multiple store locations effortlessly', 'multi-location-product-and-inventory-management'); ?></p>
                     </div>
                     <div class="version-badge">
-                        <span><?php echo esc_html__('v. 1.0.4', 'multi-location-product-and-inventory-management'); ?></span>
+                        <span><?php echo esc_html__('v. 1.0.5', 'multi-location-product-and-inventory-management'); ?></span>
                     </div>
                 </div>
 
