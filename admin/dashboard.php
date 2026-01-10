@@ -149,26 +149,39 @@ class MULOPIMFWC_Dashboard
 ?>
         <div class="wrap lwp-dashboard">
 
+            <h1 style="display: none !important;"><?php echo esc_html__('Location Wise Products Dashboard', 'multi-location-product-and-inventory-management'); ?></h1>
+
             <div class="lwp-dashboard-overview">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <h1><?php echo esc_html__('Location Wise Products Dashboard', 'multi-location-product-and-inventory-management'); ?></h1>
-                    <div class="export_report_dropdown  mulopimfwc_pro_only">
-                        <button class="mulopimfwc-btn-primary export_toggle_btn" style="padding: 10px 30px !important;">
-                            <svg width="16" height="16" viewBox="0 0 0.48 0.48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M.226.046a.02.02 0 0 1 .028 0l.08.08a.02.02 0 0 1-.028.028L.26.108V.32a.02.02 0 1 1-.04 0V.108L.174.154A.02.02 0 0 1 .146.126zM.1.34a.02.02 0 0 1 .02.02V.4h.24V.36a.02.02 0 1 1 .04 0V.4a.04.04 0 0 1-.04.04H.12A.04.04 0 0 1 .08.4V.36A.02.02 0 0 1 .1.34" />
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <!-- Filter Toggle Button -->
+                        <button class="mulopimfwc-btn-secondary filter_toggle_btn mulopimfwc_pro_only" style="padding: 10px 20px !important;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                             </svg>
-                            <?php echo esc_html__('Export Report', 'multi-location-product-and-inventory-management'); ?>
-                            <span class="dropdown_icon">▾</span>
+                            <?php echo esc_html__('Filters', 'multi-location-product-and-inventory-management'); ?>
                         </button>
 
-                        <div class="dropdown_menu">
-                            <button>
-                                <?php echo esc_html__('Export in CSV', 'multi-location-product-and-inventory-management'); ?>
+                        <!-- Export Dropdown -->
+                        <div class="export_report_dropdown  mulopimfwc_pro_only">
+                            <button class="mulopimfwc-btn-primary export_toggle_btn" style="padding: 10px 30px !important;">
+                                <svg width="16" height="16" viewBox="0 0 0.48 0.48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M.226.046a.02.02 0 0 1 .028 0l.08.08a.02.02 0 0 1-.028.028L.26.108V.32a.02.02 0 1 1-.04 0V.108L.174.154A.02.02 0 0 1 .146.126zM.1.34a.02.02 0 0 1 .02.02V.4h.24V.36a.02.02 0 1 1 .04 0V.4a.04.04 0 0 1-.04.04H.12A.04.04 0 0 1 .08.4V.36A.02.02 0 0 1 .1.34" />
+                                </svg>
+                                <?php echo esc_html__('Export Report', 'multi-location-product-and-inventory-management'); ?>
+                                <span class="dropdown_icon">▾</span>
                             </button>
 
-                            <button>
-                                <?php echo esc_html__('Export in Excel (HTML)', 'multi-location-product-and-inventory-management'); ?>
-                            </button>
+                            <div class="dropdown_menu">
+                                <button>
+                                    <?php echo esc_html__('Export in CSV', 'multi-location-product-and-inventory-management'); ?>
+                                </button>
+
+                                <button>
+                                    <?php echo esc_html__('Export in Excel (HTML)', 'multi-location-product-and-inventory-management'); ?>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -516,6 +529,108 @@ class MULOPIMFWC_Dashboard
                         </div>
                     </div>
                 </div>
+                <?php $profitability_by_location = [
+                    [
+                        'location_name' => 'New York',
+                        'inventory_value' => 15000,
+                        'margin_value' => 4500,
+                        'margin_rate' => 30.0,
+                        'dead_stock_value' => 2000,
+                        'dead_stock_units' => 15,
+                        'average_age_days' => 45.5,
+                        'shrinkage_rate' => 2.5
+                    ],
+                    [
+                        'location_name' => 'Los Angeles',
+                        'inventory_value' => 12000,
+                        'margin_value' => 3600,
+                        'margin_rate' => 30.0,
+                        'dead_stock_value' => 1500,
+                        'dead_stock_units' => 10,
+                        'average_age_days' => 50.2,
+                        'shrinkage_rate' => 3.0
+                    ],
+                    [
+                        'location_name' => 'Chicago',
+                        'inventory_value' => 10000,
+                        'margin_value' => 2500,
+                        'margin_rate' => 25.0,
+                        'dead_stock_value' => 1000,
+                        'dead_stock_units' => 8,
+                        'average_age_days' => 60.1,
+                        'shrinkage_rate' => 4.0
+                    ],
+                    [
+                        'location_name' => 'Miami',
+                        'inventory_value' => 8000,
+                        'margin_value' => 2000,
+                        'margin_rate' => 25.0,
+                        'dead_stock_value' => 800,
+                        'dead_stock_units' => 5,
+                        'average_age_days' => 55.3,
+                        'shrinkage_rate' => 2.0
+                    ],
+                    [
+                        'location_name' => 'Houston',
+                        'inventory_value' => 9000,
+                        'margin_value' => 2700,
+                        'margin_rate' => 30.0,
+                        'dead_stock_value' => 900,
+                        'dead_stock_units' => 7,
+                        'average_age_days' => 48.7,
+                        'shrinkage_rate' => 3.5
+                    ]
+                ]; ?>
+                <div class="lwp-row">
+                    <div class="lwp-col">
+                        <div class="lwp-card">
+                            <h2><?php esc_html_e('Profitability & Aging by Location', 'multi-location-product-and-inventory-management'); ?></h2>
+                            <p class="lwp-profitability-description">
+                                <?php
+                                $dead_stock_days = 90;
+                                printf(
+                                    esc_html__('Dead stock in this table represents inventory that has not sold in the last %s days. Shrinkage reflects any sold quantity that could not be matched to current stock records.', 'multi-location-product-and-inventory-management'),
+                                    esc_html($dead_stock_days)
+                                );
+                                ?>
+                            </p>
+                            <?php if (!empty($profitability_by_location)) : ?>
+                                <div class="lwp-table-responsive mulopimfwc_pro_only mulopimfwc_pro_only_blur">
+                                    <table class="lwp-profitability-table">
+                                        <thead>
+                                            <tr>
+                                                <th><?php esc_html_e('Location', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Inventory Value', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Margin Value', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Margin %', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Dead Stock Value', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Dead Stock Units', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Avg. Age (days)', 'multi-location-product-and-inventory-management'); ?></th>
+                                                <th><?php esc_html_e('Shrinkage %', 'multi-location-product-and-inventory-management'); ?></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($profitability_by_location as $summary) : ?>
+                                                <tr>
+                                                    <td><?php echo esc_html($summary['location_name']); ?></td>
+                                                    <td><?php echo wp_kses_post(wc_price($summary['inventory_value'])); ?></td>
+                                                    <td><?php echo wp_kses_post(wc_price($summary['margin_value'])); ?></td>
+                                                    <td><?php echo esc_html(number_format((float) $summary['margin_rate'], 1)); ?>%</td>
+                                                    <td><?php echo wp_kses_post(wc_price($summary['dead_stock_value'])); ?></td>
+                                                    <td><?php echo esc_html(number_format($summary['dead_stock_units'], 0)); ?></td>
+                                                    <td><?php echo esc_html(number_format((float) $summary['average_age_days'], 1)); ?></td>
+                                                    <td><?php echo esc_html(number_format((float) $summary['shrinkage_rate'], 1)); ?>%</td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else : ?>
+                                <p><?php esc_html_e('No profitability data available yet.', 'multi-location-product-and-inventory-management'); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 <?php
@@ -578,7 +693,7 @@ class MULOPIMFWC_Dashboard
 
         // Build location mappings
         foreach ($mulopimfwc_locations as $location) {
-            $location_slugs[$location->name] = $location->slug;
+            $location_slugs[$location->name] = rawurldecode($location->slug);
             $orders_by_location[$location->name] = 0;
             $location_revenue[$location->name] = 0;
         }

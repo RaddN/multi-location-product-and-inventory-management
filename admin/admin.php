@@ -72,6 +72,218 @@ class MULOPIMFWC_Admin
             <p class="description"><?php _e('Enter phone for this location', 'multi-location-product-and-inventory-management'); ?></p>
         </div>
 
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="low_stock_threshold"><?php _e('Low Stock Threshold', 'multi-location-product-and-inventory-management'); ?></label>
+            <input disabled type="number" name="low_stock_threshold" id="low_stock_threshold" value="" min="0" step="1" />
+            <p class="description"><?php _e('Alert threshold for low stock at this location (overrides global default).', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="out_of_stock_threshold"><?php _e('Out of Stock Threshold', 'multi-location-product-and-inventory-management'); ?></label>
+            <input disabled type="number" name="out_of_stock_threshold" id="out_of_stock_threshold" value="" min="0" step="1" />
+            <p class="description"><?php _e('Alert threshold for out-of-stock at this location (overrides global default).', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <!-- Latitude / Longitude -->
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="latitude"><?php _e('Latitude', 'multi-location-product-and-inventory-management'); ?></label>
+            <input disabled type="text" name="latitude" id="latitude" value="" />
+            <p class="description"><?php _e('Decimal latitude (e.g. 23.7808)', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="longitude"><?php _e('Longitude', 'multi-location-product-and-inventory-management'); ?></label>
+            <input disabled type="text" name="longitude" id="longitude" value="" />
+            <p class="description"><?php _e('Decimal longitude (e.g. 90.2792)', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <!-- Logo -->
+        <div class="form-field mulopimfwc-media-wrap">
+            <label><?php _e('Logo', 'multi-location-product-and-inventory-management'); ?></label>
+            <input disabled type="hidden" name="logo_id" class="mulopimfwc-logo-id" value="">
+            <div class="mulopimfwc-logo-preview" style="margin:6px 0;"></div>
+            <p class="mulopimfwc_pro_only">
+                <span class="button mulopimfwc-upload-logo disabled"><?php _e('Upload/Choose Logo', 'multi-location-product-and-inventory-management'); ?></span>
+                <span class="button button-link-delete mulopimfwc-remove-logo disabled"><?php _e('Remove', 'multi-location-product-and-inventory-management'); ?></span>
+            </p>
+        </div>
+
+        <!-- Gallery -->
+        <div class="form-field mulopimfwc-media-wrap">
+            <label><?php _e('Gallery', 'multi-location-product-and-inventory-management'); ?></label>
+            <input disabled type="hidden" name="gallery_ids" class="mulopimfwc-gallery-ids" value="">
+            <div class="mulopimfwc-gallery-preview" style="margin:6px 0;display:flex;flex-wrap:wrap;gap:4px;"></div>
+            <p class="mulopimfwc_pro_only">
+                <span class="button mulopimfwc-upload-gallery disabled"><?php _e('Add Images', 'multi-location-product-and-inventory-management'); ?></span>
+                <span class="button button-link-delete mulopimfwc-clear-gallery disabled"><?php _e('Clear', 'multi-location-product-and-inventory-management'); ?></span>
+            </p>
+        </div>
+
+        <!-- Business Hours -->
+        <?php
+        $def = [
+            'timezone' => get_option('timezone_string') ?: 'UTC',
+            'days' => [
+                'mon' => ['open' => '09:00', 'close' => '17:00'],
+                'tue' => ['open' => '09:00', 'close' => '17:00'],
+                'wed' => ['open' => '09:00', 'close' => '17:00'],
+                'thu' => ['open' => '09:00', 'close' => '17:00'],
+                'fri' => ['open' => '09:00', 'close' => '17:00'],
+                'sat' => ['open' => '10:00', 'close' => '14:00'],
+                'sun' => ['open' => '', 'close' => ''],
+            ],
+        ];
+        $tzs = timezone_identifiers_list(); // basic list
+        $days_labels = [
+            'mon' => __('Monday', 'multi-location-product-and-inventory-management'),
+            'tue' => __('Tuesday', 'multi-location-product-and-inventory-management'),
+            'wed' => __('Wednesday', 'multi-location-product-and-inventory-management'),
+            'thu' => __('Thursday', 'multi-location-product-and-inventory-management'),
+            'fri' => __('Friday', 'multi-location-product-and-inventory-management'),
+            'sat' => __('Saturday', 'multi-location-product-and-inventory-management'),
+            'sun' => __('Sunday', 'multi-location-product-and-inventory-management'),
+        ];
+        ?>
+        <div class="form-field">
+            <label><?php _e('Business Hours', 'multi-location-product-and-inventory-management'); ?></label>
+            <div class="mulopimfwc_pro_only" style="border:1px solid #ddd;border-radius:6px;padding:10px;max-width:660px;">
+                <p class="description" style="margin-top:0;"><?php _e('Set opening hours for each day. Use “Closed” for off days or “24 hours” for round-the-clock.', 'multi-location-product-and-inventory-management'); ?></p>
+
+                <p>
+                    <strong><?php _e('Timezone', 'multi-location-product-and-inventory-management'); ?>:</strong>
+                    <select disabled name="bh[timezone]" style="min-width:280px;">
+                        <?php foreach ($tzs as $tz): ?>
+                            <option value="<?php echo esc_attr($tz); ?>" <?php selected($tz, $def['timezone']); ?>>
+                                <?php echo esc_html($tz); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </p>
+
+                <table class="form-table" style="width:auto;border-collapse:collapse;">
+                    <tbody>
+                        <?php foreach ($def['days'] as $key => $vals): ?>
+                            <tr>
+                                <th style="text-align:left;padding:6px 8px;width:140px;"><?php echo esc_html($days_labels[$key]); ?></th>
+                                <td style="padding:6px 8px;">
+                                    <label style="margin-right:10px;">
+                                        <input disabled type="checkbox" name="bh[days][<?php echo esc_attr($key); ?>][closed]" value="1">
+                                        <?php _e('Closed', 'multi-location-product-and-inventory-management'); ?>
+                                    </label>
+                                    <label style="margin-right:10px;">
+                                        <input disabled type="checkbox" name="bh[days][<?php echo esc_attr($key); ?>][all_day]" value="1">
+                                        <?php _e('24 hours', 'multi-location-product-and-inventory-management'); ?>
+                                    </label>
+                                    <span style="margin-left:10px;">
+                                        <input disabled type="time" name="bh[days][<?php echo esc_attr($key); ?>][open]" value="<?php echo esc_attr($vals['open']); ?>">
+                                        &nbsp;–&nbsp;
+                                        <input disabled type="time" name="bh[days][<?php echo esc_attr($key); ?>][close]" value="<?php echo esc_attr($vals['close']); ?>">
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Shipping Zones -->
+        <?php $zones = [
+            'zone_1' => 'Zone 1',
+            'zone_2' => 'Zone 2',
+            'zone_3' => 'Zone 3',
+        ]; ?>
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="shipping_zones"><?php _e('Shipping Zones', 'multi-location-product-and-inventory-management'); ?></label>
+            <select disabled name="shipping_zones[]" id="shipping_zones" multiple style="min-width: 320px;">
+                <?php foreach ($zones as $zid => $zname): ?>
+                    <option value="<?php echo esc_attr($zid); ?>"><?php echo esc_html($zname); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php _e('Choose the shipping zones served by this location.', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <!-- Shipping Methods (instances) -->
+        <?php $zone_methods = [
+            'zone_1' => [
+                'flat_rate:1' => 'Flat Rate (Instance 1)',
+                'free_shipping:2' => 'Free Shipping (Instance 2)',
+            ],
+            'zone_2' => [
+                'local_pickup:3' => 'Local Pickup (Instance 3)',
+            ],
+            'zone_3' => [
+                'flat_rate:4' => 'Flat Rate (Instance 4)',
+                'free_shipping:5' => 'Free Shipping (Instance 5)',
+                'local_pickup:6' => 'Local Pickup (Instance 6)',
+            ],
+        ]; ?>
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="shipping_methods"><?php _e('Shipping Methods', 'multi-location-product-and-inventory-management'); ?></label>
+            <select disabled name="shipping_methods[]" id="shipping_methods" multiple style="min-width: 420px;">
+                <?php foreach ($zone_methods as $zid => $methods): ?>
+                    <?php if (!empty($methods)): ?>
+                        <optgroup label="<?php echo esc_attr(sprintf(__('Zone: %s', 'multi-location-product-and-inventory-management'), $zones[$zid] ?? $zid)); ?>">
+                            <?php foreach ($methods as $instance_id => $label): ?>
+                                <option value="<?php echo esc_attr($zid . ':' . $instance_id); ?>"><?php echo esc_html($label); ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php _e('Select enabled shipping method instances (grouped by zone).', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <!-- Payment Methods -->
+        <?php $payments = [
+            'paypal' => 'PayPal',
+            'stripe' => 'Stripe',
+            'cod' => 'Cash on Delivery',
+        ]; ?>
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="payment_methods"><?php _e('Payment Methods', 'multi-location-product-and-inventory-management'); ?></label>
+            <select disabled name="payment_methods[]" id="payment_methods" multiple style="min-width: 320px;">
+                <?php foreach ($payments as $pid => $ptitle): ?>
+                    <option value="<?php echo esc_attr($pid); ?>"><?php echo esc_html($ptitle); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php _e('Choose allowed payment gateways for this location.', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
+        <!-- Pickup Locations -->
+        <?php $pickup_locations = [
+            'location_1' => 'Location 1',
+            'location_2' => 'Location 2',
+            'location_3' => 'Location 3',
+        ]; ?>
+        <?php if (!empty($pickup_locations)): ?>
+            <div class="form-field mulopimfwc_pro_only">
+                <label for="pickup_locations"><?php _e('Pickup Locations', 'multi-location-product-and-inventory-management'); ?></label>
+                <select disabled name="pickup_locations[]" id="pickup_locations" multiple style="min-width: 320px;">
+                    <?php foreach ($pickup_locations as $pid => $ptitle): ?>
+                        <option value="<?php echo esc_attr($pid); ?>"><?php echo esc_html($ptitle); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php _e('Choose allowed pickup locations for this store location.', 'multi-location-product-and-inventory-management'); ?></p>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tax Class -->
+        <?php $tax_classes = [
+            '' => __('Standard', 'multi-location-product-and-inventory-management'),
+            'reduced-rate' => __('Reduced Rate', 'multi-location-product-and-inventory-management'),
+            'zero-rate' => __('Zero Rate', 'multi-location-product-and-inventory-management'),
+        ]; ?>
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="tax_class"><?php _e('Tax Class', 'multi-location-product-and-inventory-management'); ?></label>
+            <select disabled name="tax_class" id="tax_class" style="min-width: 220px;">
+                <?php foreach ($tax_classes as $key => $label): ?>
+                    <option value="<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php _e('Select default tax class for this location.', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
+
         <div class="form-field">
             <label for="display_order"><?php _e('Display Order', 'multi-location-product-and-inventory-management'); ?></label>
             <input type="number" name="display_order" id="display_order" value="" min="0" step="1" />
@@ -148,6 +360,250 @@ class MULOPIMFWC_Admin
             <td>
                 <input type="tel" name="phone" id="phone" value="<?php echo esc_attr($phone); ?>" />
                 <p class="description"><?php _e('Enter phone for this location', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="low_stock_threshold"><?php _e('Low Stock Threshold', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <input disabled type="number" name="low_stock_threshold" id="low_stock_threshold" value="5" min="0" step="1" />
+                <p class="description"><?php _e('Alert threshold for low stock at this location (overrides global default).', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="out_of_stock_threshold"><?php _e('Out of Stock Threshold', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <input disabled type="number" name="out_of_stock_threshold" id="out_of_stock_threshold" value="0" min="0" step="1" />
+                <p class="description"><?php _e('Alert threshold for out-of-stock at this location (overrides global default).', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="latitude"><?php _e('Latitude', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <input disabled type="text" name="latitude" id="latitude" value="" />
+                <p class="description"><?php _e('Decimal latitude (e.g. 23.7808)', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="longitude"><?php _e('Longitude', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <input disabled type="text" name="longitude" id="longitude" value="" />
+                <p class="description"><?php _e('Decimal longitude (e.g. 90.2792)', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label><?php _e('Logo', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc-media-wrap">
+                <input disabled type="hidden" name="logo_id" class="mulopimfwc-logo-id" value="">
+                <p class="mulopimfwc_pro_only">
+                    <span class="button mulopimfwc-upload-logo disabled"><?php _e('Upload/Choose Logo', 'multi-location-product-and-inventory-management'); ?></span>
+                    <span class="button button-link-delete mulopimfwc-remove-logo disabled"><?php _e('Remove', 'multi-location-product-and-inventory-management'); ?></span>
+                </p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label><?php _e('Gallery', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc-media-wrap">
+                <input disabled type="hidden" name="gallery_ids" class="mulopimfwc-gallery-ids" value="">
+                <p class="mulopimfwc_pro_only">
+                    <span class="button mulopimfwc-upload-gallery disabled"><?php _e('Add Images', 'multi-location-product-and-inventory-management'); ?></span>
+                    <span class="button button-link-delete mulopimfwc-clear-gallery disabled"><?php _e('Clear', 'multi-location-product-and-inventory-management'); ?></span>
+                </p>
+            </td>
+        </tr>
+
+        <?php
+        $bh = [
+            'timezone' => get_option('timezone_string') ?: 'UTC',
+            'days' => [
+                'mon' => ['open' => '09:00', 'close' => '17:00'],
+                'tue' => ['open' => '09:00', 'close' => '17:00'],
+                'wed' => ['open' => '09:00', 'close' => '17:00'],
+                'thu' => ['open' => '09:00', 'close' => '17:00'],
+                'fri' => ['open' => '09:00', 'close' => '17:00'],
+                'sat' => ['open' => '10:00', 'close' => '14:00'],
+                'sun' => ['open' => '', 'close' => ''],
+            ],
+        ];
+        $tzs = timezone_identifiers_list();
+        $days_labels = [
+            'mon' => __('Monday', 'multi-location-product-and-inventory-management'),
+            'tue' => __('Tuesday', 'multi-location-product-and-inventory-management'),
+            'wed' => __('Wednesday', 'multi-location-product-and-inventory-management'),
+            'thu' => __('Thursday', 'multi-location-product-and-inventory-management'),
+            'fri' => __('Friday', 'multi-location-product-and-inventory-management'),
+            'sat' => __('Saturday', 'multi-location-product-and-inventory-management'),
+            'sun' => __('Sunday', 'multi-location-product-and-inventory-management'),
+        ];
+        ?>
+        <tr class="form-field">
+            <th scope="row"><label><?php _e('Business Hours', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td>
+                <div  style="border:1px solid #ddd;border-radius:6px;padding:10px;max-width:660px;">
+                    <p class="description" style="margin-top:0;"><?php _e('Set opening hours for each day. Use “Closed” for off days or “24 hours” for round-the-clock.', 'multi-location-product-and-inventory-management'); ?></p>
+
+                    <p>
+                        <strong><?php _e('Timezone', 'multi-location-product-and-inventory-management'); ?>:</strong>
+                        <select disabled name="bh[timezone]" style="min-width:280px;">
+                            <?php foreach ($tzs as $tz): ?>
+                                <option value="<?php echo esc_attr($tz); ?>" <?php selected($tz, $bh['timezone']); ?>>
+                                    <?php echo esc_html($tz); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </p>
+
+                    <table class="form-table mulopimfwc_pro_only" style="width:auto;border-collapse:collapse;">
+                        <tbody>
+                            <?php foreach ($bh['days'] as $key => $vals): ?>
+                                <tr>
+                                    <th style="text-align:left;padding:6px 8px;width:140px;"><?php echo esc_html($days_labels[$key]); ?></th>
+                                    <td style="padding:6px 8px;">
+                                        <label style="margin-right:10px;">
+                                            <input disabled type="checkbox" name="bh[days][<?php echo esc_attr($key); ?>][closed]" value="1" <?php checked(!empty($vals['closed'])); ?>>
+                                            <?php _e('Closed', 'multi-location-product-and-inventory-management'); ?>
+                                        </label>
+                                        <label style="margin-right:10px;">
+                                            <input disabled type="checkbox" name="bh[days][<?php echo esc_attr($key); ?>][all_day]" value="1" <?php checked(!empty($vals['all_day'])); ?>>
+                                            <?php _e('24 hours', 'multi-location-product-and-inventory-management'); ?>
+                                        </label>
+                                        <span style="margin-left:10px;">
+                                            <input disabled type="time" name="bh[days][<?php echo esc_attr($key); ?>][open]" value="<?php echo esc_attr($vals['open']); ?>">
+                                            &nbsp;–&nbsp;
+                                            <input disabled type="time" name="bh[days][<?php echo esc_attr($key); ?>][close]" value="<?php echo esc_attr($vals['close']); ?>">
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="shipping_zones"><?php _e('Shipping Zones', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <select disabled name="shipping_zones[]" id="shipping_zones" multiple style="min-width: 320px;">
+                    <?php
+                    $zones = [
+                        'zone_1' => 'Zone 1',
+                        'zone_2' => 'Zone 2',
+                        'zone_3' => 'Zone 3',
+                    ];
+                    foreach ($zones as $zid => $zname): ?>
+                        <option value="<?php echo esc_attr($zid); ?>">
+                            <?php echo esc_html($zname); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php _e('Choose the shipping zones served by this location.', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="shipping_methods"><?php _e('Shipping Methods', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <select disabled name="shipping_methods[]" id="shipping_methods" multiple style="min-width: 420px;">
+                    <?php
+                    $zone_methods = [
+                        'zone_1' => [
+                            'flat_rate:1' => 'Flat Rate (Instance 1)',
+                            'free_shipping:2' => 'Free Shipping (Instance 2)',
+                        ],
+                        'zone_2' => [
+                            'local_pickup:3' => 'Local Pickup (Instance 3)',
+                        ],
+                        'zone_3' => [
+                            'flat_rate:4' => 'Flat Rate (Instance 4)',
+                            'free_shipping:5' => 'Free Shipping (Instance 5)',
+                            'local_pickup:6' => 'Local Pickup (Instance 6)',
+                        ],
+                    ];
+                    
+                    foreach ($zone_methods as $zid => $methods): if (empty($methods)) continue; ?>
+                        <optgroup label="<?php echo esc_attr(sprintf(__('Zone: %s', 'multi-location-product-and-inventory-management'), $zones[$zid] ?? $zid)); ?>">
+                            <?php foreach ($methods as $instance_id => $label):
+                                $val = $zid . ':' . $instance_id;
+                            ?>
+                                <option value="<?php echo esc_attr($val); ?>">
+                                    <?php echo esc_html($label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php _e('Select enabled shipping method instances (grouped by zone).', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="payment_methods"><?php _e('Payment Methods', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <select disabled name="payment_methods[]" id="payment_methods" multiple style="min-width: 320px;">
+                    <?php
+                    $payments = [
+                        'paypal' => 'PayPal',
+                        'stripe' => 'Stripe',
+                        'cod' => 'Cash on Delivery',
+                    ];
+                    foreach ($payments as $pid => $ptitle): ?>
+                        <option value="<?php echo esc_attr($pid); ?>">
+                            <?php echo esc_html($ptitle); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php _e('Choose allowed payment gateways for this location.', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+
+        <!-- Pickup Locations -->
+        <?php
+        $pickup_locations = [
+            'location_1' => 'Location 1',
+            'location_2' => 'Location 2',
+            'location_3' => 'Location 3',
+        ];
+        $sel_pickup = (array) get_term_meta($term->term_id, 'pickup_locations', true);
+        ?>
+        <?php if (!empty($pickup_locations)): ?>
+            <tr class="form-field">
+                <th scope="row"><label for="pickup_locations"><?php _e('Pickup Locations', 'multi-location-product-and-inventory-management'); ?></label></th>
+                <td class="mulopimfwc_pro_only">
+                    <select disabled name="pickup_locations[]" id="pickup_locations" multiple style="min-width: 320px;">
+                        <?php foreach ($pickup_locations as $pid => $ptitle): ?>
+                            <option value="<?php echo esc_attr($pid); ?>" <?php selected(in_array($pid, (array)$sel_pickup, true)); ?>>
+                                <?php echo esc_html($ptitle); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="description"><?php _e('Choose allowed pickup locations for this store location.', 'multi-location-product-and-inventory-management'); ?></p>
+                </td>
+            </tr>
+        <?php endif; ?>
+
+        <tr class="form-field">
+            <th scope="row"><label for="tax_class"><?php _e('Tax Class', 'multi-location-product-and-inventory-management'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <select disabled name="tax_class" id="tax_class" style="min-width: 220px;">
+                    <?php
+                    $tax_classes = [
+                        '' => __('Standard', 'multi-location-product-and-inventory-management'),
+                        'reduced-rate' => __('Reduced Rate', 'multi-location-product-and-inventory-management'),
+                        'zero-rate' => __('Zero Rate', 'multi-location-product-and-inventory-management'),
+                    ];
+                    foreach ($tax_classes as $key => $label): ?>
+                        <option value="<?php echo esc_attr($key); ?>">
+                            <?php echo esc_html($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php _e('Select default tax class for this location.', 'multi-location-product-and-inventory-management'); ?></p>
             </td>
         </tr>
 
@@ -356,6 +812,15 @@ class MULOPIMFWC_Admin
             );
         }
 
+        add_submenu_page(
+            'multi-location-product-and-inventory-management',
+            __('Our Plugins', 'multi-location-product-and-inventory-management'),
+            __('Our Plugins', 'multi-location-product-and-inventory-management'),
+            'install_plugins',
+            'plugincy-plugins',
+            array($this, 'render_plugincy_plugins_page')
+        );
+
 
         // Add "Get Pro" submenu (external link)
         add_submenu_page(
@@ -365,6 +830,148 @@ class MULOPIMFWC_Admin
             'manage_options',
             'https://plugincy.com/multi-location-product-and-inventory-management/'
         );
+    }
+
+
+    public function render_plugincy_plugins_page()
+    {
+        if (!current_user_can('install_plugins')) {
+            wp_die(esc_html__('You do not have sufficient permissions to install plugins on this site.', 'ultimate-product-table-for-woocommerce'));
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+        wp_enqueue_style('plugin-install');
+        wp_enqueue_script('plugin-install');
+        wp_enqueue_script('updates');
+        add_thickbox();
+
+        $api = plugins_api('query_plugins', array(
+            'author' => 'plugincy',
+            'page' => 1,
+            'per_page' => 30,
+            'fields' => array(
+                'short_description' => true,
+                'icons' => true,
+                'active_installs' => true,
+                'sections' => false,
+            ),
+        ));
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Plugincy Plugins', 'ultimate-product-table-for-woocommerce') . '</h1>';
+
+        if (is_wp_error($api)) {
+            echo '<div class="notice notice-error"><p>' . esc_html($api->get_error_message()) . '</p></div></div>';
+            return;
+        }
+
+        $plugins = !empty($api->plugins) ? $api->plugins : array();
+
+        if (empty($plugins)) {
+            echo '<p>' . esc_html__('No plugins found for this author.', 'ultimate-product-table-for-woocommerce') . '</p></div>';
+            return;
+        }
+
+        echo '<div class="wp-list-table widefat plugin-install-grid">';
+
+        foreach ($plugins as $plugin) {
+            $plugin_obj = is_array($plugin) ? (object) $plugin : $plugin;
+
+            $status = install_plugin_install_status($plugin_obj);
+            $action_class = 'button';
+            $action_url = '';
+            $action_text = '';
+            $action_disabled = false;
+
+            switch ($status['status']) {
+                case 'install':
+                    $action_class = 'install-now button button-primary';
+                    $action_text = esc_html__('Install Now', 'ultimate-product-table-for-woocommerce');
+                    $action_url = $status['url'];
+                    break;
+                case 'update_available':
+                    $action_class = 'update-now button';
+                    $action_text = esc_html__('Update Now', 'ultimate-product-table-for-woocommerce');
+                    $action_url = $status['url'];
+                    break;
+                default:
+                    if (!empty($status['file']) && is_plugin_active($status['file'])) {
+                        $action_class = 'button disabled';
+                        $action_text = esc_html__('Active', 'ultimate-product-table-for-woocommerce');
+                        $action_disabled = true;
+                    } elseif (!empty($status['file']) && current_user_can('activate_plugin', $status['file'])) {
+                        $action_class = 'activate-now button button-primary';
+                        $action_text = esc_html__('Activate', 'ultimate-product-table-for-woocommerce');
+                        $action_url = wp_nonce_url(self_admin_url('plugins.php?action=activate&plugin=' . $status['file']), 'activate-plugin_' . $status['file']);
+                    } else {
+                        $action_class = 'button disabled';
+                        $action_text = esc_html__('Installed', 'ultimate-product-table-for-woocommerce');
+                        $action_disabled = true;
+                    }
+            }
+
+            $icon = '';
+            $icons = (!empty($plugin_obj->icons) && is_array($plugin_obj->icons)) ? $plugin_obj->icons : array();
+            if (!empty($icons)) {
+                $preferred = array('svg', '2x', '1x', 'default');
+                foreach ($preferred as $size) {
+                    if (!empty($icons[$size])) {
+                        $icon = esc_url($icons[$size]);
+                        break;
+                    }
+                }
+            }
+
+            $name = isset($plugin_obj->name) ? $plugin_obj->name : '';
+            $short_description = isset($plugin_obj->short_description) ? $plugin_obj->short_description : '';
+            $version = isset($plugin_obj->version) ? $plugin_obj->version : '';
+            $active_installs = isset($plugin_obj->active_installs) ? $plugin_obj->active_installs : null;
+            $author = isset($plugin_obj->author) ? $plugin_obj->author : '';
+            $slug = !empty($plugin_obj->slug) ? sanitize_title($plugin_obj->slug) : sanitize_title($name);
+            $details_url = $slug ? self_admin_url('plugin-install.php?tab=plugin-information&plugin=' . $slug . '&TB_iframe=true&width=600&height=550') : '';
+
+            if ($action_url && !$action_disabled) {
+                $action_html = '<a class="' . esc_attr($action_class) . '" href="' . esc_url($action_url) . '" data-slug="' . esc_attr($slug) . '" data-name="' . esc_attr($name) . '">' . esc_html($action_text) . '</a>';
+            } else {
+                $action_html = '<span class="' . esc_attr($action_class) . '" aria-disabled="true">' . esc_html($action_text) . '</span>';
+            }
+
+            echo '<div class="plugin-card plugin-card-' . esc_attr($slug) . '">';
+            echo '<div class="plugin-card-top">';
+            echo '<div class="name column-name">';
+            if ($icon) {
+                echo '<img class="plugin-icon" src="' . $icon . '" alt="" />';
+            }
+            if ($details_url) {
+                echo '<h3><a class="thickbox open-plugin-details-modal" href="' . esc_url($details_url) . '" aria-label="' . esc_attr(sprintf(__('More details about %s', 'ultimate-product-table-for-woocommerce'), $name)) . '">' . esc_html($name) . '</a></h3>';
+            } else {
+                echo '<h3>' . esc_html($name) . '</h3>';
+            }
+            if (!empty($author)) {
+                echo '<p class="author">' . sprintf(esc_html__('By %s', 'ultimate-product-table-for-woocommerce'), wp_kses_post($author)) . '</p>';
+            }
+            echo '</div>';
+            echo '<div class="action-links"><ul class="plugin-action-buttons"><li>' . $action_html . '</li></ul></div>';
+            echo '<div class="desc column-description"><p>' . wp_kses_post($short_description) . '</p></div>';
+            echo '</div>';
+
+            echo '<div class="plugin-card-bottom">';
+            echo '<div class="vers column-rating">';
+            echo '<span>' . sprintf(esc_html__('Version %s', 'ultimate-product-table-for-woocommerce'), esc_html($version)) . '</span>';
+            if ($active_installs !== null) {
+                $installs = number_format_i18n((int) $active_installs);
+                echo '<span style="margin-left:10px;">' . sprintf(esc_html__('%s+ active installs', 'ultimate-product-table-for-woocommerce'), esc_html($installs)) . '</span>';
+            }
+            echo '</div>';
+            echo '<div class="column-compatibility"><span class="compatibility-compatible">' . esc_html__('Compatible with your version of WordPress', 'ultimate-product-table-for-woocommerce') . '</span></div>';
+            echo '</div>';
+            echo '</div>';
+        }
+
+        echo '</div>';
+        echo '</div>';
     }
 
 
@@ -559,16 +1166,16 @@ add_action('wp_ajax_mlpimforwc_dismiss_ny_notice', 'mlpimforwc_dismiss_ny_notice
 function mlpimforwc_dismiss_ny_notice_handler()
 {
     check_ajax_referer('mlpimforwc_dismiss_ny_notice', 'nonce');
-    
+
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Insufficient permissions');
     }
-    
+
     $hours = isset($_POST['hours']) ? intval($_POST['hours']) : 3;
     $dismiss_until = time() + ($hours * 3600);
-    
+
     update_user_meta(get_current_user_id(), 'mlpimforwc_ny_notice_dismissed_until', $dismiss_until);
-    
+
     wp_send_json_success('Notice dismissed for ' . $hours . ' hours');
 }
 
@@ -1014,10 +1621,10 @@ p.mlpimforwc-ny-sub {
     echo '          <p class="mlpimforwc-ny-sub">Use code <code>NYP30</code> at checkout.</p>';
     echo '      </div>';
     echo '      <a class="button button-primary mlpimforwc-ny-cta" target="_blank" href="https://plugincy.com/multi-location-product-inventory-management-new-year-deal/">Claim 30% Off</a>';
-    
+
     // Blast effects
     echo '      <span class="mlpimforwc-ny-blast"></span>';
-    
+
     // Confetti particles
     echo '      <span class="mlpimforwc-ny-confetti" style="--x:8%;--delay:0s;--duration:5.2s;--r:18deg;"></span>';
     echo '      <span class="mlpimforwc-ny-confetti" style="--x:22%;--delay:0.7s;--duration:5.6s;--r:-15deg;"></span>';
@@ -1026,22 +1633,22 @@ p.mlpimforwc-ny-sub {
     echo '      <span class="mlpimforwc-ny-confetti" style="--x:68%;--delay:1.8s;--duration:5.1s;--r:12deg;"></span>';
     echo '      <span class="mlpimforwc-ny-confetti" style="--x:82%;--delay:0.9s;--duration:5.5s;--r:-18deg;"></span>';
     echo '      <span class="mlpimforwc-ny-confetti" style="--x:94%;--delay:1.5s;--duration:5.4s;--r:22deg;"></span>';
-    
+
     // Sparkle effects
     echo '      <span class="mlpimforwc-ny-sparkle" style="--x:15%;--y:25%;--delay:0s;--duration:2.5s;"></span>';
     echo '      <span class="mlpimforwc-ny-sparkle" style="--x:85%;--y:30%;--delay:0.8s;--duration:2.2s;"></span>';
     echo '      <span class="mlpimforwc-ny-sparkle" style="--x:45%;--y:15%;--delay:1.5s;--duration:2.8s;"></span>';
     echo '      <span class="mlpimforwc-ny-sparkle" style="--x:70%;--y:70%;--delay:1s;--duration:2.4s;"></span>';
     echo '      <span class="mlpimforwc-ny-sparkle" style="--x:25%;--y:65%;--delay:1.8s;--duration:2.6s;"></span>';
-    
+
     // Firework effects
     echo '      <span class="mlpimforwc-ny-firework" style="--x:20%;--y:20%;--delay:0s;--duration:3s;"></span>';
     echo '      <span class="mlpimforwc-ny-firework" style="--x:80%;--y:25%;--delay:1s;--duration:3.2s;"></span>';
     echo '      <span class="mlpimforwc-ny-firework" style="--x:50%;--y:15%;--delay:2s;--duration:2.8s;"></span>';
-    
+
     echo '  </div>';
     echo '</div>';
-    
+
     // Add JavaScript for dismiss functionality
     echo '<script>
     jQuery(document).ready(function($) {

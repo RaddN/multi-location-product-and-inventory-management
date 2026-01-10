@@ -22,6 +22,10 @@ if (!defined('MULTI_LOCATION_PLUGIN_URL')) {
     define('MULTI_LOCATION_PLUGIN_URL', plugin_dir_url(__FILE__));
 }
 
+if (!defined('MULTI_LOCATION_PLUGIN_BASE_NAME')) {
+    define('MULTI_LOCATION_PLUGIN_BASE_NAME', plugin_basename(__FILE__));
+}
+
 if (!defined('mulopimfwc_VERSION')) {
     define("mulopimfwc_VERSION", "1.0.7");
 }
@@ -1171,6 +1175,8 @@ if (!function_exists('mulopimfwc_get_values')) {
             add_action('wp_ajax_save_product_locations', [$this, 'cymulopimfwc_save_product_locations']);
 
             add_action('admin_enqueue_scripts', [$this, 'cymulopimfwc_enqueue_admin_scripts']);
+
+            add_filter('plugin_row_meta', array(__CLASS__, 'plugin_row_meta'), 10, 2);
         }
 
 
@@ -1261,7 +1267,7 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             // Get product ID
             $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-            $location_selected = wp_get_object_terms($product_id, 'mulopimfwc_store_location', array('fields' => 'slugs'));
+            $location_selected = array_map('rawurldecode',wp_get_object_terms($product_id, 'mulopimfwc_store_location', ['fields' => 'slugs']));
             if (!$product_id) {
                 wp_send_json_error(['message' => __('Invalid product ID.', 'multi-location-product-and-inventory-management')]);
             }
@@ -1277,7 +1283,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                     'id' => $location->term_id,
                     'name' => $location->name,
                     'parent' => $location->parent,
-                    'selected' => in_array($location->slug, $location_selected),
+                    'selected' => in_array(rawurldecode($location->slug), $location_selected),
                 ];
             }
 
@@ -1469,16 +1475,59 @@ if (!function_exists('mulopimfwc_get_values')) {
         }
 
         // add_settings_link
+
         public function add_settings_link($links)
         {
             if (!is_array($links)) {
                 $links = [];
             }
+            $old_links = $links;
+            $links = [];
             $settings_link = '<a href="' . esc_url(admin_url('admin.php?page=multi-location-product-and-inventory-management-settings')) . '">' . esc_html__('Settings', 'multi-location-product-and-inventory-management') . '</a>';
+            $create_location = '<a href="' . esc_url(admin_url('edit-tags.php?taxonomy=mulopimfwc_store_location&post_type=product')) . '">' . esc_html__('Manage Locations', 'multi-location-product-and-inventory-management') . '</a>';
+            $support_link = '<a href="' . esc_url("https://www.plugincy.com/support/") . '">' . esc_html__('Support', 'multi-location-product-and-inventory-management') . '</a>';
+            $documentation_link = '<a href="' . esc_url("https://plugincy.com/documentations/multi-location-product-inventory-management-for-woocommerce/") . '">' . esc_html__('Documentation', 'multi-location-product-and-inventory-management') . '</a>';
+            $our_plugins_link = '<a href="' . esc_url(admin_url('admin.php?page=plugincy-plugins')) . '">' . esc_html__('Our Plugins', 'multi-location-product-and-inventory-management') . '</a>';
             $pro_link = '<a href="https://plugincy.com/multi-location-product-and-inventory-management" style="color: #ff5722; font-weight: bold;" target="_blank">' . esc_html__('Get Pro', 'multi-location-product-and-inventory-management') . '</a>';
-            $links[] = $settings_link;
+            
             $links[] = $pro_link;
-            return $links;
+            $links[] = $create_location;
+            $links[] = $settings_link;
+            $links[] = $support_link;
+            $links[] = $documentation_link;
+            $links[] = $our_plugins_link;
+            
+            $links = array_merge($links, $old_links);
+            return array_filter($links);
+        }
+
+        /**
+         * Show row meta on the plugin screen.
+         *
+         * @param mixed $links Plugin Row Meta.
+         * @param mixed $file  Plugin Base file.
+         *
+         * @return array
+         */
+        public static function plugin_row_meta($links, $file)
+        {
+            if (MULTI_LOCATION_PLUGIN_BASE_NAME !== $file) {
+                return $links;
+            }
+
+            $docs_url = 'https://plugincy.com/documentations/multi-location-product-inventory-management-for-woocommerce/';
+
+            $community_support_url = 'https://wordpress.org/support/plugin/multi-location-product-and-inventory-management/';
+
+            $support_url = 'https://www.plugincy.com/support/';
+
+            $row_meta = array(
+                'docs'    => '<a href="' . esc_url($docs_url) . '" aria-label="' . esc_attr__('View documentation', 'multi-location-product-and-inventory-management') . '">' . esc_html__('Docs', 'multi-location-product-and-inventory-management') . '</a>',
+                'support' => '<a href="' . esc_url($support_url) . '" aria-label="' . esc_attr__('Support', 'multi-location-product-and-inventory-management') . '">' . esc_html__('Support', 'multi-location-product-and-inventory-management') . '</a>',
+                'community_support' => '<a href="' . esc_url($community_support_url) . '" aria-label="' . esc_attr__('Visit community forums', 'multi-location-product-and-inventory-management') . '">' . esc_html__('Community support', 'multi-location-product-and-inventory-management') . '</a>',
+            );
+
+            return array_merge($links, $row_meta);
         }
 
         public function enqueue_scripts()
@@ -1688,7 +1737,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 return true;
             }
 
-            $terms = wp_get_object_terms($product_id, 'mulopimfwc_store_location', ['fields' => 'slugs']);
+            $terms = array_map('rawurldecode',wp_get_object_terms($product_id, 'mulopimfwc_store_location', ['fields' => 'slugs']));
             if (empty($terms) && $enable_all_locations === 'on') {
                 return true; // Product is available in all locations
             }

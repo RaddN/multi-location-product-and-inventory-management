@@ -132,7 +132,7 @@ class Mulopimfwc_Customer_Location_Insights
         }
 
         return [
-            'slug' => $location->slug,
+            'slug' => rawurldecode($location->slug),
             'name' => $location->name,
             'id' => $location->term_id
         ];
@@ -658,7 +658,7 @@ class Mulopimfwc_Customer_Location_Insights
     {
         check_ajax_referer('mulopimfwc_recommendations', 'nonce');
 
-        $location_slug = isset($_POST['location']) ? sanitize_text_field(wp_unslash($_POST['location'])) : '';
+        $location_slug = isset($_POST['location']) ? sanitize_text_field(wp_unslash(rawurldecode($_POST['location']))) : '';
         $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 8;
 
         if (empty($location_slug)) {
@@ -707,21 +707,21 @@ class Mulopimfwc_Customer_Location_Insights
         $all_products = [];
 
         foreach ($locations as $location) {
-            $stats = $this->get_location_stats($location->slug);
+            $stats = $this->get_location_stats(rawurldecode($location->slug));
             $global_stats['total_views'] += $stats['total_views'];
             $global_stats['total_purchases'] += $stats['total_purchases'];
             $global_stats['total_users'] += $stats['unique_users'];
             $global_stats['total_sessions'] += $stats['unique_sessions'];
 
             $location_score = ($stats['total_purchases'] * 10) + $stats['total_views'];
-            $location_scores[$location->slug] = [
+            $location_scores[rawurldecode($location->slug)] = [
                 'name' => $location->name,
                 'score' => $location_score,
                 'stats' => $stats
             ];
 
             // Get products for this location
-            $products = $this->get_popular_products($location->slug, 100);
+            $products = $this->get_popular_products(rawurldecode($location->slug), 100);
             foreach ($products as $product_id => $product_data) {
                 if (!isset($all_products[$product_id])) {
                     $all_products[$product_id] = [
@@ -946,8 +946,8 @@ class Mulopimfwc_Customer_Location_Insights
                 <div class="mulopimfwc-analytics-dashboard">
                     <?php foreach ($locations as $location): ?>
                         <?php
-                        $stats = $this->get_location_stats($location->slug);
-                        $top_products = $this->get_popular_products($location->slug, 5);
+                        $stats = $this->get_location_stats(rawurldecode($location->slug));
+                        $top_products = $this->get_popular_products(rawurldecode($location->slug), 5);
                         $location_conversion = $stats['total_views'] > 0
                             ? ($stats['total_purchases'] / $stats['total_views']) * 100
                             : 0;
@@ -956,7 +956,7 @@ class Mulopimfwc_Customer_Location_Insights
                         <div class="mulopimfwc-location-analytics-card">
                             <div class="card-header">
                                 <h3><?php echo esc_html($location->name); ?></h3>
-                                <button type="button" class="button button-secondary export-location-btn" data-location="<?php echo esc_attr($location->slug); ?>">
+                                <button type="button" class="button button-secondary export-location-btn" data-location="<?php echo esc_attr(rawurldecode($location->slug)); ?>">
                                     <span class="dashicons dashicons-download"></span>
                                     <?php esc_html_e('Export', 'multi-location-product-and-inventory-management'); ?>
                                 </button>
@@ -1676,7 +1676,7 @@ function mulopimfwc_ajax_export_analytics()
         wp_die(__('You do not have permission to export analytics.'));
     }
 
-    $location_slug = isset($_POST['location']) ? sanitize_text_field(wp_unslash($_POST['location'])) : null;
+    $location_slug = isset($_POST['location']) ? sanitize_text_field(wp_unslash(rawurldecode($_POST['location']))) : null;
 
     $instance = Mulopimfwc_Customer_Location_Insights::get_instance();
     $instance->export_analytics_data($location_slug);

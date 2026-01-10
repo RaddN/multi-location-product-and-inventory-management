@@ -777,8 +777,8 @@ class MULOPIMFWC_Order_Filter
         foreach ($mulopimfwc_locations as $location) {
             printf(
                 '<option value="%s" %s>%s</option>',
-                esc_attr($location->slug),
-                selected($selected_location, $location->slug, false),
+                esc_attr(rawurldecode($location->slug)),
+                selected($selected_location, rawurldecode($location->slug), false),
                 esc_html($location->name)
             );
         }
