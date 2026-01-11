@@ -7,9 +7,9 @@
  * Supports multiple display positions and layouts with secure AJAX handling.
  * 
  * @package Multi_Location_Product_Inventory
- * @version 1.0.7.15
+ * @version 1.0.7.35
  * @author Your Name
- * @since 1.0.7.15
+ * @since 1.0.7.35
  */
 
 if (!defined('ABSPATH')) {
@@ -26,7 +26,7 @@ class MULOPIMFWC_Product_Location_Selector
     /**
      * Plugin version
      */
-    const VERSION = '1.0.7.15';
+    const VERSION = '1.0.7.35';
 
     /**
      * Available display positions
@@ -386,7 +386,7 @@ class MULOPIMFWC_Product_Location_Selector
         if (!empty($product_locations) && !is_wp_error($product_locations)) {
             $product_slugs = wp_list_pluck($product_locations, 'slug');
             return array_filter($all_locations, function ($location) use ($product_slugs) {
-                return in_array(rawurldecode($location->slug), $product_slugs, true);
+                return in_array($location->slug, $product_slugs, true);
             });
         }
 

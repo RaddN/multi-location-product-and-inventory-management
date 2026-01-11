@@ -278,7 +278,7 @@ add_action('woocommerce_product_after_variable_attributes', function ($loop, $va
                         $location_sale_price = get_post_meta($variation->ID, '_location_sale_price_' . $location->term_id, true);
                         $location_backorders = get_post_meta($variation->ID, '_location_backorders_' . $location->term_id, true);
                     ?>
-                        <tr>
+                        <tr id="location-<?php echo esc_attr($location->term_id); ?>">
                             <td><?php echo esc_html($location->name); ?></td>
                             <td>
                                 <input type="number"
@@ -1028,7 +1028,7 @@ add_action('woocommerce_single_product_summary', function () {
     }
 
     // Check if the product belongs to the current location
-    $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
+    $terms = array_map('rawurldecode',wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
 
     if ($enable_all_locations === 'on' && empty($terms)) {
         return; // Show default WooCommerce notice
@@ -1075,7 +1075,7 @@ add_action('woocommerce_single_product_summary', function () {
 //     }
 
 //     // Check if the product belongs to the current location
-//     $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
+//     $terms = array_map('rawurldecode',wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
 
 //     if (is_wp_error($terms) || !in_array($location_slug, $terms)) {
 //         // Replace add to cart button with unavailable text
@@ -1109,7 +1109,7 @@ add_action('wp_footer', function () {
 
             if (is_wp_error($terms) || ! in_array($location_slug, $terms, true)) {
                 // Register a dummy stylesheet to attach inline styles
-                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.7.15.26');
+                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.7.35.26');
                 wp_enqueue_style('mulopimfwc-custom-woocommerce-style');
                 wp_add_inline_style('mulopimfwc-custom-woocommerce-style', '.variations_form.cart { display: none; }');
             }
@@ -1129,7 +1129,7 @@ add_action('wp_footer', function () {
             }
             if (is_wp_error($terms) || ! in_array($location_slug, $terms, true)) {
                 // Register a dummy stylesheet to attach inline styles
-                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.7.15.26');
+                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.7.35.26');
                 wp_enqueue_style('mulopimfwc-custom-woocommerce-style');
                 wp_add_inline_style('mulopimfwc-custom-woocommerce-style', 'form.cart { display: none; }');
             }
@@ -1254,7 +1254,7 @@ function mulopimfwc_display_location_specific_stock_info_loop()
         return;
     }
 
-    $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
+    $terms = array_map('rawurldecode',wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
     if ($enable_all_locations === 'on' && empty($terms)) {
         return; // Show default WooCommerce notice
     }
@@ -1300,7 +1300,7 @@ function mulopimfwc_add_location_data_to_variations($variation_data, $product, $
     }
     global $mulopimfwc_options;
     $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
-    $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
+    $terms = array_map('rawurldecode',wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
     if ($enable_all_locations === 'on' && empty($terms)) {
         return $variation_data;
     }
@@ -1354,7 +1354,7 @@ function mulopimfwc_display_location_stock_status_in_loop()
         return; // No specific location selected
     }
 
-    $terms = wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']);
+    $terms = array_map('rawurldecode',wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
     if ($enable_all_locations === 'on' && empty($terms)) {
         return; // Show default WooCommerce notice
     }
