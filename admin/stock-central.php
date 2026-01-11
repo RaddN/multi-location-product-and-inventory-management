@@ -24,13 +24,14 @@ class mulopimfwc_Stock_Central
 
 ?>
         <div class="wrap mlsctock-cenral-main">
+            <h1 style="display: none !important;"><?php echo esc_html__('Location Wise Products Stock Management', 'multi-location-product-and-inventory-management'); ?></h1>
             <div class="mlsctock-cenral-header">
-                <h1><?php echo esc_html_e('Location Wise Products Stock Management', 'multi-location-product-and-inventory-management'); ?></h1>
-                <p><?php echo esc_html_e('Manage stock levels and prices for each product by location.', 'multi-location-product-and-inventory-management'); ?></p>
+                <h1><?php echo esc_html__('Location Wise Products Stock Management', 'multi-location-product-and-inventory-management'); ?></h1>
+                <p><?php echo esc_html__('Manage stock levels and prices for each product by location.', 'multi-location-product-and-inventory-management'); ?></p>
             </div>
 
             <form method="post">
-                <?php $product_table->search_box('Search Products', 'search_products'); ?>
+                <?php $product_table->search_box(__('Search Products', 'multi-location-product-and-inventory-management'), 'search_products'); ?>
                 <?php $product_table->display(); ?>
             </form>
         </div>
@@ -153,7 +154,131 @@ class mulopimfwc_Stock_Central
             .location-actions {
                 margin-bottom: 0px;
             }
+
+            /* Accordion Styles */
+            .variation-stock-item.accordion-item,
+            .variation-price-item.accordion-item,
+            .variation-gross-profit-item.accordion-item {
+                margin-bottom: 10px;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                overflow: hidden;
+                background-color: #ffffff;
+            }
+
+            .variation-stock-item .accordion-header,
+            .variation-price-item .accordion-header,
+            .variation-gross-profit-item .accordion-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 12px;
+                background-color: #f9fafb;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.2s ease;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .variation-stock-item .accordion-header:hover,
+            .variation-price-item .accordion-header:hover,
+            .variation-gross-profit-item .accordion-header:hover {
+                background-color: #f3f4f6;
+            }
+
+            .variation-stock-item.accordion-expanded .accordion-header,
+            .variation-price-item.accordion-expanded .accordion-header,
+            .variation-gross-profit-item.accordion-expanded .accordion-header {
+                background-color: #e5e7eb;
+            }
+
+            .variation-stock-item .accordion-header strong,
+            .variation-price-item .accordion-header strong,
+            .variation-gross-profit-item .accordion-header strong {
+                font-weight: 600;
+                color: #374151;
+                flex: 1;
+            }
+
+            .accordion-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                font-size: 18px;
+                font-weight: bold;
+                color: #6b7280;
+                border-radius: 4px;
+                background-color: #ffffff;
+                transition: transform 0.2s ease;
+            }
+
+            .variation-stock-item .accordion-content,
+            .variation-price-item .accordion-content,
+            .variation-gross-profit-item .accordion-content {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease, padding 0.3s ease;
+                padding: 0 12px;
+            }
+
+            .variation-stock-item .accordion-content.accordion-open,
+            .variation-price-item .accordion-content.accordion-open,
+            .variation-gross-profit-item .accordion-content.accordion-open {
+                max-height: 2000px;
+                padding: 10px 12px;
+            }
+
+            .variation-stock-item .accordion-content .location-stock-item,
+            .variation-price-item .accordion-content .location-price-item,
+            .variation-gross-profit-item .accordion-content .location-gross-profit-item {
+                margin-bottom: 8px;
+            }
+
+            .variation-stock-item .accordion-content .location-stock-item:last-child,
+            .variation-price-item .accordion-content .location-price-item:last-child,
+            .variation-gross-profit-item .accordion-content .location-gross-profit-item:last-child {
+                margin-bottom: 0;
+            }
         </style>
+
+        <script>
+        (function($) {
+            $(document).ready(function() {
+                // Initialize accordions - first item expanded
+                $('.location-stock-container, .location-price-container, .gross-profit-container').each(function() {
+                    var $container = $(this);
+                    var $accordionItems = $container.find('.accordion-item');
+                    
+                    // First item should be expanded
+                    $accordionItems.first().addClass('accordion-expanded').find('.accordion-content').addClass('accordion-open');
+                    $accordionItems.first().find('.accordion-icon').text('−');
+                });
+
+                // Handle accordion toggle
+                $(document).on('click', '.accordion-header', function(e) {
+                    e.preventDefault();
+                    var $header = $(this);
+                    var $item = $header.closest('.accordion-item');
+                    var $content = $header.siblings('.accordion-content');
+                    var $icon = $header.find('.accordion-icon');
+                    var targetId = $header.data('accordion-target');
+
+                    // Toggle expanded class
+                    $item.toggleClass('accordion-expanded');
+                    $content.toggleClass('accordion-open');
+
+                    // Update icon
+                    if ($item.hasClass('accordion-expanded')) {
+                        $icon.text('−');
+                    } else {
+                        $icon.text('+');
+                    }
+                });
+            });
+        })(jQuery);
+        </script>
 <?php
     }
 }
