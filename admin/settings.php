@@ -2319,7 +2319,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                         <p class="tagline"><?php echo esc_html__('Manage products, inventory, and pricing across multiple store locations effortlessly', 'multi-location-product-and-inventory-management'); ?></p>
                     </div>
                     <div class="version-badge">
-                        <span><?php echo esc_html__('v. 1.0.7', 'multi-location-product-and-inventory-management'); ?></span>
+                        <span><?php echo esc_html__('v. 1.0.7.5', 'multi-location-product-and-inventory-management'); ?></span>
                     </div>
                 </div>
 
