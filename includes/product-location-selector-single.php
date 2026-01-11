@@ -7,9 +7,9 @@
  * Supports multiple display positions and layouts with secure AJAX handling.
  * 
  * @package Multi_Location_Product_Inventory
- * @version 1.0.7.5
+ * @version 1.0.7.15
  * @author Your Name
- * @since 1.0.7.5
+ * @since 1.0.7.15
  */
 
 if (!defined('ABSPATH')) {
@@ -26,7 +26,7 @@ class MULOPIMFWC_Product_Location_Selector
     /**
      * Plugin version
      */
-    const VERSION = '1.0.7.5';
+    const VERSION = '1.0.7.15';
 
     /**
      * Available display positions
@@ -484,9 +484,6 @@ class MULOPIMFWC_Product_Location_Selector
                                 data-location-id="<?php echo esc_attr($location->term_id); ?>" />
                             <label for="location-<?php echo esc_attr($location->term_id); ?>">
                                 <?php echo esc_html($location->name); ?>
-                                <?php if (!empty($location->description)): ?>
-                                    <span class="mulopimfwc-location-description"><?php echo esc_html($location->description); ?></span>
-                                <?php endif; ?>
                             </label>
                         </div>
                     <?php endforeach; ?>
