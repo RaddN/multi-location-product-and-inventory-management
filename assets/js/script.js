@@ -55,7 +55,7 @@ jQuery(document).ready(function ($) {
     }
 
     $('#lwp-shortcode-selector-form').on('change', function () {
-        const dropdown = $(this).find('#lwp-shortcode-selector');
+        const dropdown = $(this).find('#lwp-selected-store-shortcode');
         const selectedStore = dropdown.val();
         var locationId = getSelectedLocationId();
 

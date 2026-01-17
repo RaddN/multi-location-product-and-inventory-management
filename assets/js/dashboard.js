@@ -29,74 +29,148 @@
     }
 
     /**
+    * Add small offsets to duplicate values to prevent overlapping in charts
+    */
+    function addValueOffsets(values) {
+        const valueMap = {};
+        const offsetValues = [...values];
+
+        // Group indices by value
+        values.forEach((value, index) => {
+            if (!valueMap[value]) {
+                valueMap[value] = [];
+            }
+            valueMap[value].push(index);
+        });
+
+        // Add tiny offsets to duplicate values
+        Object.keys(valueMap).forEach(value => {
+            const indices = valueMap[value];
+            if (indices.length > 1) {
+                // Multiple items with same value - add small offsets
+                indices.forEach((index, offsetIndex) => {
+                    // Add very small offset (0.0001 * offsetIndex) to ensure different angles
+                    offsetValues[index] = parseFloat(value) + (offsetIndex * 0.0001);
+                });
+            }
+        });
+
+        return offsetValues;
+    }
+
+    function getValuesForLabels(source, labels) {
+        if (!source) {
+            return labels.map(() => 0);
+        }
+
+        return labels.map(label => {
+            const value = source[label];
+            return value !== undefined ? value : 0;
+        });
+    }
+
+    function hexToRgba(color, alpha) {
+        if (!color || typeof color !== 'string') {
+            return color;
+        }
+
+        if (color.startsWith('rgba')) {
+            return color;
+        }
+
+        if (color.startsWith('rgb')) {
+            return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
+        }
+
+        if (color[0] !== '#') {
+            return color;
+        }
+
+        let hex = color.slice(1);
+        if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+        }
+
+        if (hex.length !== 6) {
+            return color;
+        }
+
+        const num = parseInt(hex, 16);
+        const r = (num >> 16) & 255;
+        const g = (num >> 8) & 255;
+        const b = num & 255;
+
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    /**
      * Initialize Products by Location Chart
      */
     function initProductsChart() {
         const ctx = document.getElementById('locationProductsChart');
-
         if (!ctx) return;
 
         const labels = Object.keys(mulopimfwc_DashboardData.productCounts);
-        const values = Object.values(mulopimfwc_DashboardData.productCounts);
-        const bgColors = labels.map(label => mulopimfwc_DashboardData.locationColors[label]);
-        const borderColors = labels.map(label => mulopimfwc_DashboardData.locationBorderColors[label]);
+        const originalValues = Object.values(mulopimfwc_DashboardData.productCounts);
+        const values = addValueOffsets(originalValues);
+        const bgColors = labels.map(label => mulopimfwc_DashboardData.locationColors[label] || 'rgba(37, 99, 235, 0.7)');
+        const borderColors = labels.map(label => mulopimfwc_DashboardData.locationBorderColors[label] || 'rgba(37, 99, 235, 1)');
+        const previousColors = borderColors.map(color => hexToRgba(color, 0.35));
 
-        // Calculate percentages
-        const total = values.reduce((a, b) => a + b, 0);
-        const percentages = values.map(v => ((v / total) * 100).toFixed(1));
-
-        new Chart(ctx, {
-            type: 'pie',
+        window.locationProductsChart = new Chart(ctx, {
+            type: 'doughnut',
             data: {
                 labels: labels,
                 datasets: [{
                     data: values,
                     backgroundColor: bgColors,
                     borderColor: '#f8f9fa',
-                    borderWidth: 2
+                    borderWidth: 2,
+                    // Store original values in dataset metadata
+                    originalValues: originalValues
+                }, {
+                    data: [],
+                    backgroundColor: previousColors,
+                    borderColor: '#f8f9fa',
+                    borderWidth: 1,
+                    hoverOffset: 0,
+                    weight: 0.6,
+                    originalValues: [],
+                    label: mulopimfwc_DashboardData.i18n.previousPeriod || 'Previous period',
+                    hidden: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '45%',
                 plugins: {
-                    legend: {
-                        display: false // Hide default legend
-                    },
-                    title: {
-                        display: false
-                    },
+                    legend: { display: false },
+                    title: { display: false },
                     tooltip: {
                         callbacks: {
                             label: function (context) {
-                                const value = context.raw;
-                                const percentage = percentages[context.dataIndex];
-                                return `${context.label}: ${value} (${percentage}%)`;
+                                // Use original value for display, not the offset value
+                                const origValues = context.dataset.originalValues || originalValues;
+                                const value = origValues[context.dataIndex];
+                                const total = origValues.reduce((sum, v) => sum + v, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                const datasetLabel = context.dataset.label ? `${context.dataset.label} - ` : '';
+                                return `${datasetLabel}${context.label}: ${value} (${percentage}%)`;
                             }
                         },
-                        bodyFont: {
-                            size: 14
-                        },
+                        bodyFont: { size: 14 },
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         padding: 10,
-                        cornerRadius: 6,
-                        caretSize: 6,
-                        boxPadding: 6
+                        cornerRadius: 6
                     },
-                    // Custom plugin to draw labels outside the chart
                     datalabels: false
                 },
                 layout: {
-                    padding: {
-                        top: 40,
-                        bottom: 40,
-                        left: 120,
-                        right: 120
-                    }
+                    padding: { top: 40, bottom: 40, left: 120, right: 120 }
                 }
             },
             plugins: [{
-                // Custom plugin to draw labels with lines
                 afterDraw: function (chart) {
                     const ctx = chart.ctx;
                     const chartArea = chart.chartArea;
@@ -107,43 +181,67 @@
                         (chartArea.bottom - chartArea.top) / 2
                     );
 
-                    chart.data.datasets[0].data.forEach((value, index) => {
+                    const origValues = chart.data.datasets[0].originalValues || originalValues;
+                    const total = origValues.reduce((sum, value) => sum + value, 0);
+                    const percentages = origValues.map(v => total > 0 ? ((v / total) * 100).toFixed(1) : '0.0');
+                    const datasetColors = chart.data.datasets[0].backgroundColor || bgColors;
+                    const chartData = chart.data.datasets[0].data;
+
+                    // Calculate initial label positions
+                    const labelPositions = [];
+                    chartData.forEach((value, index) => {
                         const meta = chart.getDatasetMeta(0);
                         const arc = meta.data[index];
                         const angle = (arc.startAngle + arc.endAngle) / 2;
 
-                        // Line start point (at the edge of the pie)
-                        const x1 = centerX + Math.cos(angle) * radius;
-                        const y1 = centerY + Math.sin(angle) * radius;
-
-                        // Line end point (extended outward)
                         const lineLength = 30;
                         const x2 = centerX + Math.cos(angle) * (radius + lineLength);
                         const y2 = centerY + Math.sin(angle) * (radius + lineLength);
-
-                        // Horizontal line extension
                         const horizontalLength = 20;
                         const x3 = x2 + (Math.cos(angle) > 0 ? horizontalLength : -horizontalLength);
-                        const y3 = y2;
 
-                        // Draw the line
+                        labelPositions.push({
+                            index,
+                            angle,
+                            x1: centerX + Math.cos(angle) * radius,
+                            y1: centerY + Math.sin(angle) * radius,
+                            x2, y2, x3,
+                            y3: y2,
+                            label: `${chart.data.labels[index]}: ${percentages[index]}%`,
+                            color: datasetColors[index],
+                            side: Math.cos(angle) > 0 ? 'right' : 'left'
+                        });
+                    });
+
+                    // Adjust overlapping labels
+                    const leftLabels = labelPositions.filter(p => p.side === 'left').sort((a, b) => a.y3 - b.y3);
+                    const rightLabels = labelPositions.filter(p => p.side === 'right').sort((a, b) => a.y3 - b.y3);
+                    const minSpacing = 20;
+
+                    [leftLabels, rightLabels].forEach(labels => {
+                        for (let i = 1; i < labels.length; i++) {
+                            if (labels[i].y3 - labels[i - 1].y3 < minSpacing) {
+                                labels[i].y3 = labels[i - 1].y3 + minSpacing;
+                                labels[i].y2 = labels[i].y3;
+                            }
+                        }
+                    });
+
+                    // Draw all labels
+                    [...leftLabels, ...rightLabels].forEach(pos => {
                         ctx.beginPath();
-                        ctx.strokeStyle = bgColors[index];
+                        ctx.strokeStyle = pos.color;
                         ctx.lineWidth = 1;
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.lineTo(x3, y3);
+                        ctx.moveTo(pos.x1, pos.y1);
+                        ctx.lineTo(pos.x2, pos.y2);
+                        ctx.lineTo(pos.x3, pos.y3);
                         ctx.stroke();
 
-                        // Draw the label
-                        const label = `${chart.data.labels[index]}: ${percentages[index]}%`;
                         ctx.fillStyle = '#333';
                         ctx.font = '12px Arial, sans-serif';
-                        ctx.textAlign = Math.cos(angle) > 0 ? 'left' : 'right';
+                        ctx.textAlign = pos.side === 'right' ? 'left' : 'right';
                         ctx.textBaseline = 'middle';
-
-                        const labelX = x3 + (Math.cos(angle) > 0 ? 5 : -5);
-                        ctx.fillText(label, labelX, y3);
+                        ctx.fillText(pos.label, pos.x3 + (pos.side === 'right' ? 5 : -5), pos.y3);
                     });
                 }
             }]

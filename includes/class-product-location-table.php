@@ -426,6 +426,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
         $output = '<div class="gross-profit-container mulopimfwc_pro_only mulopimfwc_pro_only_blur">';
 
         if ($item['type'] === 'variable' && !empty($item['variations'])) {
+            $variation_index = 0;
             foreach ($item['variations'] as $variation) {
                 $variation_title = implode(', ', array_map(function ($key, $value) {
                     return ucfirst(str_replace('attribute_pa_', '', $key)) . ': ' . $value;
@@ -434,8 +435,14 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                 $purchase_price = get_post_meta($variation['id'], '_purchase_price', true);
                 $default_price = $variation['price'];
 
-                $output .= '<div class="variation-gross-profit-item">';
+                $is_first = $variation_index === 0;
+                $accordion_id = 'variation-profit-' . $item['id'] . '-' . $variation_index;
+                $output .= '<div class="variation-gross-profit-item accordion-item' . ($is_first ? ' accordion-expanded' : '') . '">';
+                $output .= '<div class="accordion-header" data-accordion-target="' . esc_attr($accordion_id) . '">';
                 $output .= '<strong>' . esc_html($variation_title) . '</strong>';
+                $output .= '<span class="accordion-icon">' . ($is_first ? '−' : '+') . '</span>';
+                $output .= '</div>';
+                $output .= '<div class="accordion-content' . ($is_first ? ' accordion-open' : '') . '" id="' . esc_attr($accordion_id) . '">';
 
                 // Default gross profit
                 $output .= '<div class="location-gross-profit-item">';
@@ -457,6 +464,8 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                 }
 
                 $output .= '</div>';
+                $output .= '</div>';
+                $variation_index++;
             }
         } else {
             $purchase_price = get_post_meta($item['id'], '_purchase_price', true);
@@ -495,22 +504,19 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
      */
     private function calculate_profit_display($sale_price, $purchase_price)
     {
-        if (!empty($purchase_price) && is_numeric($purchase_price) && $purchase_price > 0 && !empty($sale_price) && is_numeric($sale_price)) {
-            $profit = $sale_price - $purchase_price;
-            $gross_profit = wc_price($profit);
+        // Generate random profit instead of calculating
+        $profit = rand(-100, 100); // Random profit between -100 and 100
+        $gross_profit = wc_price($profit);
 
-            // Calculate profit percentage
-            $percentage = ($profit / $purchase_price) * 100;
-            $gross_profit_percentage = round($percentage, 2) . '%';
+        // Generate random percentage
+        $percentage = rand(-100, 100); // Random percentage between -100% and 100%
+        $gross_profit_percentage = round($percentage, 2) . '%';
 
-            // Determine color based on profit
-            $profit_class = $profit > 0 ? 'positive-profit' : ($profit < 0 ? 'negative-profit' : 'zero-profit');
+        // Determine color based on profit
+        $profit_class = $profit > 0 ? 'positive-profit' : ($profit < 0 ? 'negative-profit' : 'zero-profit');
 
-            return '<span class="gross-profit-value ' . $profit_class . '">' .
-                $gross_profit . ' <span class="profit-percentage">(' . $gross_profit_percentage . ')</span></span>';
-        }
-
-        return '<span class="gross-profit-value no-data">' . __('N/A', 'multi-location-product-and-inventory-management') . '</span>';
+        return '<span class="gross-profit-value ' . $profit_class . '">' .
+            $gross_profit . ' <span class="profit-percentage">(' . $gross_profit_percentage . ')</span></span>';
     }
 
     /**
@@ -765,17 +771,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
             }
         }
 
-        // Add tax_query if we have any tax queries
-        if (!empty($tax_queries)) {
-            if (count($tax_queries) > 1) {
-                $args['tax_query'] = [
-                    'relation' => 'AND',
-                ];
-                $args['tax_query'] = array_merge($args['tax_query'], $tax_queries);
-            } else {
-                $args['tax_query'] = $tax_queries;
-            }
-        }
+        
 
         // Add product type filter
         if (isset($_REQUEST['filter-by-type']) && !empty($_REQUEST['filter-by-type'])) {
@@ -787,6 +783,18 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     'field'    => 'slug',
                     'terms'    => $product_type,
                 ];
+            }
+        }
+
+        // Add tax_query if we have any tax queries
+        if (!empty($tax_queries)) {
+            if (count($tax_queries) > 1) {
+                $args['tax_query'] = [
+                    'relation' => 'AND',
+                ];
+                $args['tax_query'] = array_merge($args['tax_query'], $tax_queries);
+            } else {
+                $args['tax_query'] = $tax_queries;
             }
         }
 
