@@ -50,14 +50,15 @@ class MULOPIMFWC_Dashboard
 
         // Enqueue necessary scripts and styles
         wp_enqueue_script('chart-js', plugin_dir_url(__FILE__) . '../assets/js/chart.min.js', array(), '3.9.1', true);
-        wp_enqueue_script('lwp-dashboard-js', plugin_dir_url(__FILE__) . '../assets/js/dashboard.js', array('jquery', 'chart-js'), "1.0.7.5", true);
-        wp_enqueue_style('lwp-dashboard-css', plugin_dir_url(__FILE__) . '../assets/css/dashboard.css', array(), "1.0.7.5");
+        wp_enqueue_script('lwp-dashboard-js', plugin_dir_url(__FILE__) . '../assets/js/dashboard.js', array('jquery', 'chart-js'), "1.0.7.7", true);
+        wp_enqueue_style('lwp-dashboard-css', plugin_dir_url(__FILE__) . '../assets/css/dashboard.css', array(), "1.0.7.7");
 
         // Initialize data arrays
-        $product_counts = [];
-        $stock_levels = [];
+        $location_labels = [];
         $location_colors = [];
         $location_border_colors = [];
+        $product_counts = [];
+        $stock_levels = [];
 
         // Check if locations exist and is not an error
         if (empty($mulopimfwc_locations) || is_wp_error($mulopimfwc_locations)) {
@@ -96,19 +97,12 @@ class MULOPIMFWC_Dashboard
                 $location_border_colors[$location->name] = $this->adjustColorLightness($border_color, $lightness_adjust);
             }
 
-            // Get product count for this location using a more efficient query
-            $product_count = $this->get_location_product_count($location->term_id);
-            $product_counts[$location->name] = $product_count;
-
-            // Get stock level for this location
-            $stock_level = $this->get_location_stock_level($location->term_id);
-            $stock_levels[$location->name] = $stock_level;
+            $location_labels[] = $location->name;
         }
 
-        // Get orders data efficiently
-        $orders_data = $this->get_orders_data_efficiently();
-        $orders_by_location = $orders_data['orders'];
-        $location_revenue = $orders_data['revenue'];
+        $location_stats = $this->get_location_product_and_stock_totals($mulopimfwc_locations);
+        $product_counts = $location_stats['product_counts'];
+        $stock_levels = $location_stats['stock_levels'];
 
         // Get low stock products with limit
         $low_stock_products = $this->get_low_stock_products_efficiently();
@@ -120,21 +114,20 @@ class MULOPIMFWC_Dashboard
         $monthly_investment_data = $this->get_monthly_investment_data_cached();
 
         // Calculate totals efficiently
+        $total_products = $this->get_total_products_count();
         $total_investment = $this->calculate_total_investment_efficiently();
+        $total_revenue = wp_rand(1000, 100000);
 
         wp_localize_script('lwp-dashboard-js', 'mulopimfwc_DashboardData', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'export_nonce' => wp_create_nonce('mulopimfwc_export_nonce'),
+            'locationLabels' => $location_labels,
             'productCounts' => $product_counts,
             'stockLevels' => $stock_levels,
             'locationColors' => $location_colors,
             'locationBorderColors' => $location_border_colors,
             'dateLabels' => $recent_products_data['labels'],
-            'dateCounts' => $recent_products_data['counts'],
-            'ordersByLocation' => $orders_by_location,
-            'revenueByLocation' => $location_revenue,
             'monthlyInvestmentLabels' => $monthly_investment_data['labels'],
-            'monthlyInvestmentData' => $monthly_investment_data['data'],
             'currency' => get_woocommerce_currency_symbol(),
             'currency_code' => get_woocommerce_currency(),
             'i18n' => [
@@ -283,7 +276,7 @@ class MULOPIMFWC_Dashboard
                             </div>
                             <div>
                                 <span class="lwp-stat-label"><?php echo esc_html__('Total Products', 'multi-location-product-and-inventory-management'); ?></span>
-                                <span class="lwp-stat-value"><?php echo esc_html($this->get_total_products_count()); ?></span>
+                                <span class="lwp-stat-value"><?php echo esc_html($total_products); ?></span>
                             </div>
                         </div>
                         <div class="lwp-stat-item">
@@ -346,7 +339,7 @@ class MULOPIMFWC_Dashboard
                             </div>
                             <div>
                                 <span class="lwp-stat-label"><?php echo esc_html__('Revenue (30 days)', 'multi-location-product-and-inventory-management'); ?></span>
-                                <span class="lwp-stat-value"><?php echo wp_kses_post(wc_price(array_sum($location_revenue))); ?></span>
+                                <span class="lwp-stat-value"><?php echo wp_kses_post(wc_price($total_revenue)); ?></span>
 
                             </div>
 
@@ -417,73 +410,6 @@ class MULOPIMFWC_Dashboard
                     <div class="lwp-col">
                         <div class="lwp-card">
                             <h2><?php esc_html_e('Low Stock Products by Location', 'multi-location-product-and-inventory-management'); ?></h2>
-                            <?php
-
-                            $low_stock_products = [
-                                [
-                                    "product_id" => 1,
-                                    "product_title" => "Apple Laptop",
-                                    "location_name" => "New York",
-                                    "stock" => 0
-                                ],
-                                [
-                                    "product_id" => 2,
-                                    "product_title" => "Samsung Galaxy Phone",
-                                    "location_name" => "Los Angeles",
-                                    "stock" => 2
-                                ],
-                                [
-                                    "product_id" => 3,
-                                    "product_title" => "Dell XPS 15",
-                                    "location_name" => "Chicago",
-                                    "stock" => 1
-                                ],
-                                [
-                                    "product_id" => 4,
-                                    "product_title" => "Sony Headphones",
-                                    "location_name" => "Miami",
-                                    "stock" => 0
-                                ],
-                                [
-                                    "product_id" => 5,
-                                    "product_title" => "LG OLED TV",
-                                    "location_name" => "Houston",
-                                    "stock" => 3
-                                ],
-                                [
-                                    "product_id" => 6,
-                                    "product_title" => "Amazon Echo",
-                                    "location_name" => "Seattle",
-                                    "stock" => 1
-                                ],
-                                [
-                                    "product_id" => 7,
-                                    "product_title" => "Microsoft Surface Pro",
-                                    "location_name" => "San Francisco",
-                                    "stock" => 2
-                                ],
-                                [
-                                    "product_id" => 8,
-                                    "product_title" => "Bose SoundLink Speaker",
-                                    "location_name" => "Boston",
-                                    "stock" => 0
-                                ],
-                                [
-                                    "product_id" => 9,
-                                    "product_title" => "iPad Pro",
-                                    "location_name" => "Atlanta",
-                                    "stock" => 1
-                                ],
-                                [
-                                    "product_id" => 10,
-                                    "product_title" => "Fitbit Charge 5",
-                                    "location_name" => "Denver",
-                                    "stock" => 0
-                                ]
-                            ];
-
-                            ?>
-
                             <?php if (!empty($low_stock_products)) : ?>
                                 <table class="lwp-low-stock-table mulopimfwc_pro_only mulopimfwc_pro_only_blur">
                                     <thead>
@@ -637,89 +563,123 @@ class MULOPIMFWC_Dashboard
     }
 
     /**
-     * Get product count for a specific location efficiently
+     * Get product counts and stock totals for all locations in one query.
      */
-    private function get_location_product_count($location_id)
+    private function get_location_product_and_stock_totals($locations)
     {
+        $product_counts = [];
+        $stock_levels = [];
+        $location_ids = [];
+        $location_names = [];
+
+        if (empty($locations) || is_wp_error($locations)) {
+            return [
+                'product_counts' => $product_counts,
+                'stock_levels' => $stock_levels
+            ];
+        }
+
+        foreach ($locations as $location) {
+            $location_id = (int) $location->term_id;
+            if ($location_id <= 0) {
+                continue;
+            }
+            $location_ids[] = $location_id;
+            $location_names[$location_id] = $location->name;
+            $product_counts[$location->name] = 0;
+            $stock_levels[$location->name] = 0;
+        }
+
+        if (empty($location_ids)) {
+            return [
+                'product_counts' => $product_counts,
+                'stock_levels' => $stock_levels
+            ];
+        }
+
         global $wpdb;
 
-        $query = $wpdb->prepare("
-            SELECT COUNT(DISTINCT p.ID) 
-            FROM {$wpdb->posts} p
-            INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-            INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-            WHERE p.post_type = 'product' 
-            AND p.post_status = 'publish'
-            AND tt.taxonomy = 'mulopimfwc_store_location'
-            AND tt.term_id = %d
-        ", $location_id);
+        $location_placeholders = implode(',', array_fill(0, count($location_ids), '%d'));
+        $meta_keys = array_map(function ($id) {
+            return '_location_stock_' . $id;
+        }, $location_ids);
+        $meta_placeholders = implode(',', array_fill(0, count($meta_keys), '%s'));
 
-        return (int) $wpdb->get_var($query);
+        $query = $wpdb->prepare(
+            "SELECT 'count' AS metric, tt.term_id AS location_id, NULL AS meta_key,
+                    COUNT(DISTINCT p.ID) AS value
+             FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+             WHERE p.post_type = 'product'
+               AND p.post_status = 'publish'
+               AND tt.taxonomy = 'mulopimfwc_store_location'
+               AND tt.term_id IN ({$location_placeholders})
+             GROUP BY tt.term_id
+             UNION ALL
+             SELECT 'stock' AS metric, NULL AS location_id, pm.meta_key AS meta_key,
+                    COALESCE(SUM(CAST(pm.meta_value AS SIGNED)), 0) AS value
+             FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+             WHERE p.post_type = 'product'
+               AND p.post_status = 'publish'
+               AND pm.meta_key IN ({$meta_placeholders})
+               AND pm.meta_value != ''
+               AND pm.meta_value IS NOT NULL
+             GROUP BY pm.meta_key",
+            array_merge($location_ids, $meta_keys)
+        );
+
+        $results = $wpdb->get_results($query);
+        if (!empty($results)) {
+            foreach ($results as $row) {
+                if ($row->metric === 'count') {
+                    $location_id = (int) $row->location_id;
+                    if (!isset($location_names[$location_id])) {
+                        continue;
+                    }
+                    $location_name = $location_names[$location_id];
+                    $product_counts[$location_name] = (int) $row->value;
+                    continue;
+                }
+
+                if ($row->metric === 'stock' && !empty($row->meta_key)) {
+                    $location_id = (int) str_replace('_location_stock_', '', $row->meta_key);
+                    if (!isset($location_names[$location_id])) {
+                        continue;
+                    }
+                    $location_name = $location_names[$location_id];
+                    $stock_levels[$location_name] = (int) $row->value;
+                }
+            }
+        }
+
+        return [
+            'product_counts' => $product_counts,
+            'stock_levels' => $stock_levels
+        ];
     }
 
     /**
-     * Get stock level for a specific location efficiently
-     */
-    private function get_location_stock_level($location_id)
-    {
-        global $wpdb;
-
-        $meta_key = '_location_stock_' . $location_id;
-
-        $query = $wpdb->prepare("
-            SELECT COALESCE(SUM(CAST(pm.meta_value AS SIGNED)), 0) as total_stock
-            FROM {$wpdb->posts} p
-            INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-            WHERE p.post_type = 'product' 
-            AND p.post_status = 'publish'
-            AND pm.meta_key = %s
-            AND pm.meta_value != ''
-            AND pm.meta_value IS NOT NULL
-        ", $meta_key);
-
-        return (int) $wpdb->get_var($query);
-    }
-
-    /**
-     * Get orders data efficiently
+     * Get orders data (randomized)
      */
     private function get_orders_data_efficiently()
     {
         global $mulopimfwc_locations;
 
-        $orders_by_location = ['Default' => 0];
-        $location_revenue = ['Default' => 0];
-        $location_slugs = ['Default' => 'default'];
+        $orders_by_location = [];
+        $location_revenue = [];
 
-        // Build location mappings
-        foreach ($mulopimfwc_locations as $location) {
-            $location_slugs[$location->name] = rawurldecode($location->slug);
-            $orders_by_location[$location->name] = 0;
-            $location_revenue[$location->name] = 0;
+        if (empty($mulopimfwc_locations) || is_wp_error($mulopimfwc_locations)) {
+            return [
+                'orders' => $orders_by_location,
+                'revenue' => $location_revenue
+            ];
         }
 
-        // Get orders for the last 30 days with limit
-        $orders = wc_get_orders([
-            'status' => ['completed', 'pending', 'processing'],
-            'date_created' => '>' . gmdate('Y-m-d', strtotime('-30 days')),
-            'limit' => 1000 // Limit to prevent memory issues
-        ]);
-
-        foreach ($orders as $order) {
-            $order_location = $order->get_meta('_store_location');
-            $order_total = $order->get_total();
-
-            // Find location name from slug
-            $location_name = 'Default';
-            foreach ($location_slugs as $name => $slug) {
-                if ($slug === $order_location) {
-                    $location_name = $name;
-                    break;
-                }
-            }
-
-            $orders_by_location[$location_name]++;
-            $location_revenue[$location_name] += $order_total;
+        foreach ($mulopimfwc_locations as $location) {
+            $orders_by_location[$location->name] = wp_rand(0, 200);
+            $location_revenue[$location->name] = wp_rand(0, 100000);
         }
 
         return [
@@ -729,73 +689,58 @@ class MULOPIMFWC_Dashboard
     }
 
     /**
-     * Get low stock products efficiently with limit
+     * Get low stock products with random values
      */
     private function get_low_stock_products_efficiently()
     {
-        global $wpdb, $mulopimfwc_locations;
+        global $mulopimfwc_locations;
 
-        if (empty($mulopimfwc_locations)) {
+        if (empty($mulopimfwc_locations) || is_wp_error($mulopimfwc_locations)) {
             return [];
         }
 
-        $low_stock_products = [];
+        $product_names = [
+            'Sample Widget',
+            'Demo Gadget',
+            'Test Bundle',
+            'Preview Kit',
+            'Mock Device',
+            'Sample Pack',
+            'Trial Unit',
+            'Placeholder Item',
+            'Example Product',
+            'Prototype Gear'
+        ];
 
-        foreach ($mulopimfwc_locations as $location) {
-            $meta_key = '_location_stock_' . $location->term_id;
+        $items = [];
+        $location_count = count($mulopimfwc_locations);
+        $max_items = min(10, $location_count * 2);
 
-            $query = $wpdb->prepare("
-                SELECT p.ID, p.post_title, pm.meta_value as stock
-                FROM {$wpdb->posts} p
-                INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-                WHERE p.post_type = 'product' 
-                AND p.post_status = 'publish'
-                AND pm.meta_key = %s
-                AND CAST(pm.meta_value AS SIGNED) <= 5
-                AND pm.meta_value != ''
-                ORDER BY CAST(pm.meta_value AS SIGNED) ASC
-                LIMIT 20
-            ", $meta_key);
-
-            $results = $wpdb->get_results($query);
-
-            foreach ($results as $result) {
-                $low_stock_products[] = [
-                    'product_id' => $result->ID,
-                    'product_title' => $result->post_title,
-                    'location_name' => $location->name,
-                    'stock' => (int) $result->stock
-                ];
-            }
+        for ($i = 0; $i < $max_items; $i++) {
+            $location = $mulopimfwc_locations[$i % $location_count];
+            $items[] = [
+                'product_id' => $i + 1,
+                'product_title' => $product_names[$i % count($product_names)],
+                'location_name' => $location->name,
+                'stock' => wp_rand(0, 3)
+            ];
         }
 
-        return $low_stock_products;
+        return $items;
     }
 
     /**
-     * Get recent products data efficiently
+     * Get recent products data (randomized)
      */
     private function get_recent_products_data()
     {
-        global $wpdb;
-
         $days = 30;
         $labels = [];
         $counts = [];
 
         for ($i = $days - 1; $i >= 0; $i--) {
-            $date = gmdate('Y-m-d', strtotime("-$i days"));
             $labels[] = gmdate('M d', strtotime("-$i days"));
-
-            $query = $wpdb->prepare("
-                SELECT COUNT(*) 
-                FROM {$wpdb->posts} 
-                WHERE post_type = 'product' 
-                AND post_status = 'publish'
-                AND DATE(post_date) = %s
-            ", $date);
-
-            $counts[] = (int) $wpdb->get_var($query);
+            $counts[] = wp_rand(0, 100);
         }
 
         return [
@@ -811,6 +756,65 @@ class MULOPIMFWC_Dashboard
     {
         global $wpdb;
 
+        // Check if current user is a location manager
+        $is_location_manager = false;
+        $assigned_location_slugs = [];
+
+        if (is_user_logged_in()) {
+            $user = wp_get_current_user();
+            if (in_array('mulopimfwc_location_manager', $user->roles)) {
+                $is_location_manager = true;
+                $assigned_location_slugs = get_user_meta($user->ID, 'mulopimfwc_assigned_locations', true);
+
+                if (!is_array($assigned_location_slugs)) {
+                    $assigned_location_slugs = [];
+                }
+            }
+        }
+
+        if (
+            $is_location_manager &&
+            class_exists('MULOPIMFWC_Location_Managers') &&
+            MULOPIMFWC_Location_Managers::user_has_capability('all_products')
+        ) {
+            $is_location_manager = false;
+            $assigned_location_slugs = [];
+        }
+
+        // For location managers with assigned locations
+        if ($is_location_manager && !empty($assigned_location_slugs)) {
+            // Get term IDs from slugs
+            $term_ids = [];
+            foreach ($assigned_location_slugs as $slug) {
+                $term = get_term_by('slug', $slug, 'mulopimfwc_store_location');
+                if ($term && !is_wp_error($term)) {
+                    $term_ids[] = $term->term_id;
+                }
+            }
+
+            if (empty($term_ids)) {
+                return 0;
+            }
+
+            // Build query to count products in assigned locations
+            $term_ids_placeholder = implode(',', array_fill(0, count($term_ids), '%d'));
+
+            $query = $wpdb->prepare(
+                "SELECT COUNT(DISTINCT p.ID) 
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+            INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+            WHERE p.post_type = 'product' 
+            AND p.post_status = 'publish'
+            AND tt.taxonomy = 'mulopimfwc_store_location'
+            AND tt.term_id IN ({$term_ids_placeholder})",
+                ...$term_ids
+            );
+
+            return (int) $wpdb->get_var($query);
+        }
+
+        // For admins and other users, return all products
         $query = "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish'";
         return (int) $wpdb->get_var($query);
     }
@@ -822,81 +826,64 @@ class MULOPIMFWC_Dashboard
     {
         // Use caching to prevent recalculation
         $cache_key = 'mulopimfwc_total_investment';
-        // $cached_value = get_transient($cache_key);
+        $cached_value = get_transient($cache_key);
 
-        // if ($cached_value !== false) {
-        //     return $cached_value;
-        // }
+        if ($cached_value !== false) {
+            return $cached_value;
+        }
 
         global $wpdb;
 
-        // Log the start of the calculation
-        error_log("Starting total investment calculation.");
-
+        // FIXED: Use prepared statement for security
         // Calculate investment based on _purchase_price and _purchase_quantity
-        $total_investment = $wpdb->get_var("
+        $total_investment = $wpdb->get_var($wpdb->prepare("
         SELECT COALESCE(SUM(
             CAST(pm1.meta_value AS DECIMAL(10,2)) * 
             COALESCE(CAST(pm2.meta_value AS SIGNED), 0)
         ), 0) as total
         FROM {$wpdb->postmeta} pm1
         INNER JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
-        WHERE pm1.meta_key = '_purchase_price'
-        AND pm2.meta_key = '_purchase_quantity'
+        INNER JOIN {$wpdb->posts} p ON pm1.post_id = p.ID
+        WHERE pm1.meta_key = %s
+        AND pm2.meta_key = %s
+        AND p.post_type = %s
+        AND p.post_status = %s
         AND pm1.meta_value != ''
         AND pm1.meta_value > 0
         AND pm2.meta_value != ''
         AND pm2.meta_value > 0
         AND pm1.post_id IN (
             SELECT ID FROM {$wpdb->posts} 
-            WHERE post_type = 'product' 
-            AND post_status = 'publish'
+            WHERE post_type = %s 
+            AND post_status = %s
         )
-    ");
+        ", '_purchase_price', '_purchase_quantity', 'product', 'publish', 'product', 'publish'));
 
         $total_investment = floatval($total_investment);
 
-        // Log the raw investment total
-        error_log("Raw total investment calculated: " . $total_investment);
-
         // Cache for 1 hour
         set_transient($cache_key, $total_investment, HOUR_IN_SECONDS);
-
-        // Log the final cached value
-        error_log("Total investment cached: " . $total_investment);
 
         return $total_investment;
     }
 
     /**
-     * Get monthly investment data with caching
+     * Get monthly investment data (randomized)
      */
     private function get_monthly_investment_data_cached()
     {
-        $cache_key = 'mulopimfwc_monthly_investment';
-        $cached_data = get_transient($cache_key);
-
-        if ($cached_data !== false) {
-            return $cached_data;
-        }
-
         $months = 12;
         $labels = [];
         $data = [];
 
         for ($i = $months - 1; $i >= 0; $i--) {
             $labels[] = gmdate('M Y', strtotime("-$i months"));
-            $data[] = rand(1000, 10000); // Simplified for performance - replace with actual calculation if needed
+            $data[] = wp_rand(1000, 10000);
         }
 
-        $result = [
+        return [
             'labels' => $labels,
             'data' => $data
         ];
-
-        // Cache for 6 hours
-        set_transient($cache_key, $result, 6 * HOUR_IN_SECONDS);
-
-        return $result;
     }
 }

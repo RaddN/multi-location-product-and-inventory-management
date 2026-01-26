@@ -28,6 +28,33 @@
         initRevenueChart();
     }
 
+    function getLocationLabels() {
+        const data = window.mulopimfwc_DashboardData || {};
+
+        if (Array.isArray(data.locationLabels) && data.locationLabels.length) {
+            return data.locationLabels;
+        }
+
+        if (data.locationColors && typeof data.locationColors === 'object') {
+            return Object.keys(data.locationColors);
+        }
+
+        return [];
+    }
+
+    function getRandomValues(count, min, max) {
+        if (!count) {
+            return [];
+        }
+
+        const safeMin = typeof min === 'number' ? min : 0;
+        const safeMax = typeof max === 'number' ? max : safeMin;
+
+        return Array.from({ length: count }, () => (
+            Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin
+        ));
+    }
+
     /**
     * Add small offsets to duplicate values to prevent overlapping in charts
     */
@@ -110,8 +137,12 @@
         const ctx = document.getElementById('locationProductsChart');
         if (!ctx) return;
 
-        const labels = Object.keys(mulopimfwc_DashboardData.productCounts);
-        const originalValues = Object.values(mulopimfwc_DashboardData.productCounts);
+        const labels = getLocationLabels();
+        if (!labels.length) {
+            return;
+        }
+
+        const originalValues = getValuesForLabels(mulopimfwc_DashboardData.productCounts, labels);
         const values = addValueOffsets(originalValues);
         const bgColors = labels.map(label => mulopimfwc_DashboardData.locationColors[label] || 'rgba(37, 99, 235, 0.7)');
         const borderColors = labels.map(label => mulopimfwc_DashboardData.locationBorderColors[label] || 'rgba(37, 99, 235, 1)');
@@ -256,8 +287,12 @@
 
         if (!ctx) return;
 
-        const labels = Object.keys(mulopimfwc_DashboardData.stockLevels);
-        const values = Object.values(mulopimfwc_DashboardData.stockLevels);
+        const labels = getLocationLabels();
+        if (!labels.length) {
+            return;
+        }
+
+        const values = getValuesForLabels(mulopimfwc_DashboardData.stockLevels, labels);
 
         // Create gradient - vertical from top to bottom
         const canvas = ctx;
@@ -634,14 +669,18 @@
 
         if (!ctx) return;
 
-        const labels = Object.keys(mulopimfwc_DashboardData.ordersByLocation);
-        const values = labels.map(() => Math.floor(Math.random() * 100));
+        const labels = getLocationLabels();
+        if (!labels.length) {
+            return;
+        }
+
+        const values = getRandomValues(labels.length, 0, 100);
         const bgColors = labels.map(label => mulopimfwc_DashboardData.locationColors[label] || 'rgba(153, 102, 255, 0.7)');
         const borderColors = labels.map(label => mulopimfwc_DashboardData.locationBorderColors[label] || 'rgba(153, 102, 255, 1)');
 
         // Calculate percentages
         const total = values.reduce((a, b) => a + b, 0);
-        const percentages = values.map(v => ((v / total) * 100).toFixed(1));
+        const percentages = values.map(v => total > 0 ? ((v / total) * 100).toFixed(1) : '0.0');
 
         new Chart(ctx, {
             type: 'doughnut',
@@ -751,8 +790,12 @@
 
         if (!ctx) return;
 
-        const labels = Object.keys(mulopimfwc_DashboardData.revenueByLocation);
-        const values = labels.map(() => Math.floor(Math.random() * 100));
+        const labels = getLocationLabels();
+        if (!labels.length) {
+            return;
+        }
+
+        const values = getRandomValues(labels.length, 0, 10000);
         const bgColors = labels.map(label => mulopimfwc_DashboardData.locationColors[label] || 'rgba(75, 192, 192, 0.7)');
         const borderColors = labels.map(label => mulopimfwc_DashboardData.locationBorderColors[label] || 'rgba(75, 192, 192, 1)');
         const currency_code = mulopimfwc_DashboardData.currency_code;
