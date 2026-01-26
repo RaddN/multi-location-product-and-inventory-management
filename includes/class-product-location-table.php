@@ -22,6 +22,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
      * Flag to track if we're ordering by location
      */
     private $ordering_by_location = false;
+    
     /**
      * Constructor
      */
@@ -32,6 +33,71 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
             'plural'   => 'products',
             'ajax'     => false,
         ]);
+        
+        // Add screen options for per_page
+        add_filter('set_screen_option_' . $this->get_screen_option_name(), [$this, 'set_screen_option'], 10, 3);
+    }
+
+    /**
+     * Get the screen option name for this table
+     * Used for storing user's per_page preference
+     * 
+     * @return string Screen option name
+     */
+    protected function get_screen_option_name()
+    {
+        return 'mulopimfwc_products_per_page';
+    }
+
+    /**
+     * Validate and sanitize screen option value
+     * Enforces maximum limit to prevent memory issues
+     * 
+     * @param mixed $status Current status
+     * @param string $option Option name
+     * @param mixed $value Option value
+     * @return mixed Validated value
+     */
+    public function set_screen_option($status, $option, $value)
+    {
+        if ($option === $this->get_screen_option_name()) {
+            $max_per_page = $this->get_max_per_page();
+            $value = (int) $value;
+            // Enforce maximum limit
+            return min($value, $max_per_page);
+        }
+        return $status;
+    }
+
+    /**
+     * Get the maximum allowed items per page
+     * Prevents memory exhaustion and timeouts on large datasets
+     * 
+     * @return int Maximum items per page (default: 100)
+     */
+    private function get_max_per_page()
+    {
+        /**
+         * Filter the maximum items per page for the product location table
+         * 
+         * @param int $max_per_page Maximum items per page (default: 100)
+         */
+        return apply_filters('mulopimfwc_max_per_page', 100);
+    }
+
+    /**
+     * Get the default items per page
+     * 
+     * @return int Default items per page (default: 20)
+     */
+    private function get_default_per_page()
+    {
+        /**
+         * Filter the default items per page for the product location table
+         * 
+         * @param int $default_per_page Default items per page (default: 20)
+         */
+        return apply_filters('mulopimfwc_default_per_page', 20);
     }
 
     /**
@@ -710,6 +776,80 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
     }
 
     /**
+     * Batch load location meta for multiple products/variations
+     * Prevents N+1 query problem by loading all meta in a single query
+     * 
+     * @param array $product_ids Array of product IDs
+     * @param array $variation_ids Array of variation IDs
+     * @param array $location_ids Array of location IDs
+     * @return array Cache structure: [post_id][location_id][meta_key] => meta_value
+     */
+    private function batch_load_location_meta($product_ids, $variation_ids, $location_ids)
+    {
+        $cache = [];
+        $all_post_ids = array_unique(array_merge($product_ids, $variation_ids));
+        
+        if (empty($all_post_ids) || empty($location_ids)) {
+            return $cache;
+        }
+
+        global $wpdb;
+        
+        // Build meta keys for all locations
+        $meta_keys = [];
+        foreach ($location_ids as $location_id) {
+            $meta_keys[] = '_location_stock_' . $location_id;
+            $meta_keys[] = '_location_regular_price_' . $location_id;
+            $meta_keys[] = '_location_sale_price_' . $location_id;
+            $meta_keys[] = '_location_backorders_' . $location_id;
+        }
+
+        if (empty($meta_keys)) {
+            return $cache;
+        }
+
+        // Prepare placeholders for IN clauses (sanitize as integers for post_ids, strings for meta_keys)
+        $post_ids_placeholder = implode(',', array_map('intval', $all_post_ids));
+        $meta_keys_escaped = array_map(function($key) use ($wpdb) {
+            return $wpdb->prepare('%s', $key);
+        }, $meta_keys);
+        $meta_keys_placeholder = implode(',', $meta_keys_escaped);
+
+        // Single query to get all location meta
+        $query = "SELECT post_id, meta_key, meta_value 
+                  FROM {$wpdb->postmeta} 
+                  WHERE post_id IN ($post_ids_placeholder) 
+                  AND meta_key IN ($meta_keys_placeholder)";
+
+        $results = $wpdb->get_results($query);
+
+        // Organize results by post_id and location_id
+        foreach ($results as $row) {
+            $post_id = (int) $row->post_id;
+            $meta_key = $row->meta_key;
+            $meta_value = $row->meta_value;
+
+            // Extract location_id from meta_key (e.g., '_location_stock_123' => 123)
+            // Meta keys format: '_location_stock_{location_id}', '_location_regular_price_{location_id}', etc.
+            foreach ($location_ids as $location_id) {
+                $suffix = '_' . $location_id;
+                if (strpos($meta_key, '_location_') === 0 && substr($meta_key, -strlen($suffix)) === $suffix) {
+                    if (!isset($cache[$post_id])) {
+                        $cache[$post_id] = [];
+                    }
+                    if (!isset($cache[$post_id][$location_id])) {
+                        $cache[$post_id][$location_id] = [];
+                    }
+                    $cache[$post_id][$location_id][$meta_key] = $meta_value;
+                    break;
+                }
+            }
+        }
+
+        return $cache;
+    }
+
+    /**
      * Prepare table items
      */
     public function prepare_items()
@@ -722,15 +862,50 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
         $sortable = $this->get_sortable_columns();
         $this->_column_headers = [$columns, $hidden, $sortable];
 
-        $per_page = 20;
+        // Get per_page from user preference, screen option, or default
+        // WP_List_Table's get_items_per_page() handles screen options automatically
+        $default_per_page = $this->get_default_per_page();
+        $user_per_page = $this->get_items_per_page($this->get_screen_option_name(), $default_per_page);
+        
+        // Enforce maximum limit to prevent memory exhaustion and timeouts
+        // This is critical for sites with 10,000+ products
+        $max_per_page = $this->get_max_per_page();
+        $per_page = min((int) $user_per_page, $max_per_page);
+        
+        // Ensure per_page is at least 1
+        $per_page = max(1, $per_page);
+        
+        // If user tried to set a value higher than max, show a notice
+        if ((int) $user_per_page > $max_per_page) {
+            add_action('admin_notices', function() use ($max_per_page) {
+                echo '<div class="notice notice-warning is-dismissible"><p>';
+                printf(
+                    esc_html__('Maximum items per page is limited to %d for performance reasons. Large datasets require pagination.', 'multi-location-product-and-inventory-management'),
+                    $max_per_page
+                );
+                echo '</p></div>';
+            });
+        }
+        
         $current_page = $this->get_pagenum();
+        
+        // Ensure current_page is valid (at least 1)
+        $current_page = max(1, (int) $current_page);
 
         $args = [
             'post_type' => 'product',
             'posts_per_page' => $per_page,
             'paged' => $current_page,
             'post_status' => 'publish',
+            'no_found_rows' => false, // We need found_posts for pagination
+            'nopaging' => false, // Explicitly disable loading all posts - CRITICAL for memory management
         ];
+        
+        // Additional safeguard: Ensure posts_per_page is never -1 or 0
+        // WordPress allows -1 to load all posts, which we must prevent
+        if ($args['posts_per_page'] <= 0) {
+            $args['posts_per_page'] = $this->get_default_per_page();
+        }
 
         // Add search if set
         if (isset($_REQUEST['s']) && !empty($_REQUEST['s'])) {
@@ -825,9 +1000,26 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
         remove_filter('posts_clauses', [$this, 'order_by_location_assignment'], 10);
         $this->ordering_by_location = false;
 
+        // Safety check: Ensure query didn't accidentally load all posts
+        // This prevents memory exhaustion if something goes wrong
+        $max_per_page = $this->get_max_per_page();
+        if ($query->post_count > $max_per_page) {
+            // Something went wrong - log error and limit results
+            error_log('Multi Location Plugin: Query returned more posts than allowed. Limiting to ' . $max_per_page);
+            // Truncate the posts array to prevent memory issues
+            $query->posts = array_slice($query->posts, 0, $max_per_page);
+            $query->post_count = count($query->posts);
+        }
+
         $this->items = [];
 
         if ($query->have_posts()) {
+            // First pass: collect all product IDs, variation IDs, and location IDs for batch loading
+            $all_product_ids = [];
+            $all_variation_ids = [];
+            $all_location_ids = [];
+            $products_data = [];
+
             while ($query->have_posts()) {
                 $query->the_post();
                 $product_id = get_the_ID();
@@ -836,14 +1028,58 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     continue;
                 }
 
-                // Get product thumbnail
-                $thumbnail = $product->get_image('thumbnail', ['class' => 'product-thumbnail']);
+                $all_product_ids[] = $product_id;
+                $product_type = $product->get_type();
 
                 // Get product locations
                 $location_terms = wp_get_object_terms($product_id, 'mulopimfwc_store_location');
+                $assigned_location_ids = [];
+                if (!is_wp_error($location_terms) && !empty($location_terms)) {
+                    $assigned_location_ids = array_map(function($term) {
+                        return $term->term_id;
+                    }, $location_terms);
+                    $all_location_ids = array_merge($all_location_ids, $assigned_location_ids);
+                }
 
-                // Get product type
-                $product_type = $product->get_type();
+                // Collect variation IDs for variable products
+                if ($product_type === 'variable') {
+                    $variation_ids = $product->get_children();
+                    if (!empty($variation_ids)) {
+                        $all_variation_ids = array_merge($all_variation_ids, $variation_ids);
+                    }
+                }
+
+                // Store product data for second pass
+                $products_data[$product_id] = [
+                    'product' => $product,
+                    'product_type' => $product_type,
+                    'location_terms' => $location_terms,
+                    'assigned_location_ids' => $assigned_location_ids,
+                ];
+            }
+            wp_reset_postdata();
+
+            // Batch load all location meta in a single query
+            // Limit the number of items we process to prevent memory issues
+            $max_per_page = $this->get_max_per_page();
+            if (count($all_product_ids) > $max_per_page) {
+                // Safety limit: Only process up to max_per_page products
+                $all_product_ids = array_slice($all_product_ids, 0, $max_per_page);
+                $all_variation_ids = array_slice($all_variation_ids, 0, $max_per_page * 10); // Allow more variations
+            }
+            
+            $all_location_ids = array_unique($all_location_ids);
+            $location_meta_cache = $this->batch_load_location_meta($all_product_ids, $all_variation_ids, $all_location_ids);
+
+            // Second pass: build items using cached meta data
+            foreach ($products_data as $product_id => $data) {
+                $product = $data['product'];
+                $product_type = $data['product_type'];
+                $location_terms = $data['location_terms'];
+                $assigned_location_ids = $data['assigned_location_ids'];
+
+                // Get product thumbnail
+                $thumbnail = $product->get_image('thumbnail', ['class' => 'product-thumbnail']);
 
                 // Handle variable products
                 if ($product_type === 'variable') {
@@ -877,14 +1113,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     'variations' => [],
                 ];
 
-                // Get only assigned/activated locations data for this product
-                $assigned_location_ids = [];
-                if (!is_wp_error($location_terms) && !empty($location_terms)) {
-                    $assigned_location_ids = array_map(function($term) {
-                        return $term->term_id;
-                    }, $location_terms);
-                }
-                
+                // Get location data using cached meta
                 if (!empty($assigned_location_ids)) {
                     foreach ($assigned_location_ids as $location_id) {
                         $location_term = get_term($location_id, 'mulopimfwc_store_location');
@@ -892,13 +1121,26 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                             continue;
                         }
                         
+                        // Use cached meta data
+                        $cached_meta = isset($location_meta_cache[$product_id][$location_id]) 
+                            ? $location_meta_cache[$product_id][$location_id] 
+                            : [];
+                        
                         $product_data['locations'][] = [
                             'id' => $location_id,
                             'name' => $location_term->name,
-                            'stock' => get_post_meta($product_id, '_location_stock_' . $location_id, true),
-                            'regular_price' => get_post_meta($product_id, '_location_regular_price_' . $location_id, true),
-                            'sale_price' => get_post_meta($product_id, '_location_sale_price_' . $location_id, true),
-                            'backorders' => get_post_meta($product_id, '_location_backorders_' . $location_id, true),
+                            'stock' => isset($cached_meta['_location_stock_' . $location_id]) 
+                                ? $cached_meta['_location_stock_' . $location_id] 
+                                : '',
+                            'regular_price' => isset($cached_meta['_location_regular_price_' . $location_id]) 
+                                ? $cached_meta['_location_regular_price_' . $location_id] 
+                                : '',
+                            'sale_price' => isset($cached_meta['_location_sale_price_' . $location_id]) 
+                                ? $cached_meta['_location_sale_price_' . $location_id] 
+                                : '',
+                            'backorders' => isset($cached_meta['_location_backorders_' . $location_id]) 
+                                ? $cached_meta['_location_backorders_' . $location_id] 
+                                : '',
                         ];
                     }
                 }
@@ -932,7 +1174,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                                 'locations' => [],
                             ];
 
-                            // Get location data for variation - only assigned locations
+                            // Get location data for variation using cached meta
                             if (!empty($assigned_location_ids)) {
                                 foreach ($assigned_location_ids as $location_id) {
                                     $location_term = get_term($location_id, 'mulopimfwc_store_location');
@@ -940,13 +1182,26 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                                         continue;
                                     }
                                     
+                                    // Use cached meta data
+                                    $cached_meta = isset($location_meta_cache[$variation_id][$location_id]) 
+                                        ? $location_meta_cache[$variation_id][$location_id] 
+                                        : [];
+                                    
                                     $variation_data['locations'][] = [
                                         'id' => $location_id,
                                         'name' => $location_term->name,
-                                        'stock' => get_post_meta($variation_id, '_location_stock_' . $location_id, true),
-                                        'regular_price' => get_post_meta($variation_id, '_location_regular_price_' . $location_id, true),
-                                        'sale_price' => get_post_meta($variation_id, '_location_sale_price_' . $location_id, true),
-                                        'backorders' => get_post_meta($variation_id, '_location_backorders_' . $location_id, true),
+                                        'stock' => isset($cached_meta['_location_stock_' . $location_id]) 
+                                            ? $cached_meta['_location_stock_' . $location_id] 
+                                            : '',
+                                        'regular_price' => isset($cached_meta['_location_regular_price_' . $location_id]) 
+                                            ? $cached_meta['_location_regular_price_' . $location_id] 
+                                            : '',
+                                        'sale_price' => isset($cached_meta['_location_sale_price_' . $location_id]) 
+                                            ? $cached_meta['_location_sale_price_' . $location_id] 
+                                            : '',
+                                        'backorders' => isset($cached_meta['_location_backorders_' . $location_id]) 
+                                            ? $cached_meta['_location_backorders_' . $location_id] 
+                                            : '',
                                     ];
                                 }
                             }
@@ -967,6 +1222,10 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     'quick_edit_data' => $product_data, // Store complete data for popup
                 ];
             }
+            
+            // Clear memory: Unset large arrays that are no longer needed
+            unset($products_data, $location_meta_cache, $all_product_ids, $all_variation_ids, $all_location_ids);
+            
             wp_reset_postdata();
         }
 

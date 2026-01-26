@@ -4,7 +4,7 @@
  * Location Managers Admin Page
  * 
  * @package Multi Location Product & Inventory Management
- * @since 1.0.7
+ * @since 1.0.7.5
  */
 
 if (!defined('ABSPATH')) exit;
@@ -99,7 +99,10 @@ class MULOPIMFWC_Location_Managers
         ];
         $locations = $mulopimfwc_locations;
         $capabilities = $this->get_available_capabilities();
-        $options = get_option('mulopimfwc_display_options', []);
+        global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
         $global_capabilities = isset($options['location_manager_capabilities']) ? $options['location_manager_capabilities'] : [];
 
 ?>
@@ -601,7 +604,10 @@ class MULOPIMFWC_Location_Managers
         $manager_capabilities = get_user_meta($user->ID, 'mulopimfwc_manager_capabilities', true);
         if (!is_array($manager_capabilities) || empty($manager_capabilities)) {
             // Use global capabilities
-            $options = get_option('mulopimfwc_display_options', []);
+            global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
             $manager_capabilities = isset($options['location_manager_capabilities']) ? $options['location_manager_capabilities'] : [];
         }
 

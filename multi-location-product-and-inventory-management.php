@@ -4,7 +4,7 @@
  * Plugin Name: Multi Location Product & Inventory Management for WooCommerce
  * Plugin URI: https://plugincy.com/multi-location-product-and-inventory-management
  * Description: Filter WooCommerce products by store locations with a location selector for customers.
- * Version: 1.0.7
+ * Version: 1.0.7.5
  * Author: plugincy
  * Author URI: https://plugincy.com/
  * Text Domain: multi-location-product-and-inventory-management
@@ -27,7 +27,7 @@ if (!defined('MULTI_LOCATION_PLUGIN_BASE_NAME')) {
 }
 
 if (!defined('mulopimfwc_VERSION')) {
-    define("mulopimfwc_VERSION", "1.0.7");
+    define("mulopimfwc_VERSION", "1.0.7.5");
 }
 
 
@@ -1123,10 +1123,48 @@ if (!function_exists('mulopimfwc_get_values')) {
     {
 
         private $cart_items_cache = null;
+        
+        /**
+         * Request-level cache for product location term relationships
+         * Prevents N+1 query problems by batch loading term relationships
+         * 
+         * @var array|null Cache structure: [product_id => [location_slug1, location_slug2, ...]]
+         */
+        private static $product_locations_cache = null;
+        
+        /**
+         * Track which product IDs have been batch loaded to avoid redundant queries
+         * 
+         * @var array Array of product IDs that have been loaded
+         */
+        private static $batch_loaded_products = [];
+        
+        /**
+         * Request-level cache for display options
+         * Prevents repeated get_option() calls that hit the database
+         * 
+         * @var array|null Cached display options
+         */
+        private static $cached_display_options = null;
+        
+        /**
+         * Request-level cache for location terms
+         * Prevents repeated get_term_by() calls that hit the database
+         * Cache structure: [location_slug => WP_Term object]
+         * 
+         * @var array Cached location terms
+         */
+        private static $cached_location_terms = [];
+        
         public function __construct()
         {
             add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
+            // Clear cache when display options are updated
+            add_action('update_option_mulopimfwc_display_options', [__CLASS__, 'clear_display_options_cache']);
+            add_action('add_option_mulopimfwc_display_options', [__CLASS__, 'clear_display_options_cache']);
+            add_action('delete_option_mulopimfwc_display_options', [__CLASS__, 'clear_display_options_cache']);
             add_action('pre_get_posts', [$this, 'filter_products_by_location']);
+            add_filter('posts_clauses', [$this, 'filter_products_by_location_clauses'], 10, 2);
             add_filter('woocommerce_shortcode_products_query', [$this, 'filter_shortcode_products']);
             add_filter('woocommerce_products_widget_query_args', [$this, 'filter_widget_products']);
             add_filter('woocommerce_related_products_args', [$this, 'filter_related_products']);
@@ -1148,6 +1186,7 @@ if (!function_exists('mulopimfwc_get_values')) {
             add_filter('woocommerce_rest_prepare_product_object', [$this, 'modify_product_rest_response'], 10, 3);
             add_filter('woocommerce_cart_contents', [$this, 'filter_cart_contents'], 10, 1);
             add_action('template_redirect', [$this, 'filter_recently_viewed_products']);
+            add_action('template_redirect', [$this, 'handle_unavailable_single_product'], 5);
             add_filter('woocommerce_add_to_cart_validation', [$this, 'validate_location_selection_before_add_to_cart'], 10, 5);
 
             add_action('wp_ajax_clear_cart', [$this, 'clear_cart']);
@@ -1807,7 +1846,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 'mulopimfwc-multi-location-product-and-inventory-managements-admin',
                 plugin_dir_url(__FILE__) . 'assets/js/admin.js',
                 ['jquery'],
-                '1.0.7',
+                '1.0.7.5',
                 true
             );
 
@@ -1827,7 +1866,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 'mulopimfwc-multi-location-product-and-inventory-managements-admin',
                 plugin_dir_url(__FILE__) . 'assets/css/admin.css',
                 [],
-                '1.0.7'
+                '1.0.7.5'
             );
         }
 
@@ -1977,9 +2016,9 @@ if (!function_exists('mulopimfwc_get_values')) {
                 ? (int)$mulopimfwc_options["location_cookie_expiry"]
                 : 30;
 
-            wp_enqueue_style('mulopimfwc_style', plugins_url('assets/css/style.css', __FILE__), [], '1.0.7');
+            wp_enqueue_style('mulopimfwc_style', plugins_url('assets/css/style.css', __FILE__), [], '1.0.7.5');
             wp_enqueue_style('mulopimfwc_select2', plugins_url('assets/css/select2.min.css', __FILE__), [], '4.1.0');
-            wp_enqueue_script('mulopimfwc_script', plugins_url('assets/js/script.js', __FILE__), ['jquery'], '1.0.7', true);
+            wp_enqueue_script('mulopimfwc_script', plugins_url('assets/js/script.js', __FILE__), ['jquery'], '1.0.7.5', true);
             wp_enqueue_script('mulopimfwc_select2', plugins_url('assets/js/select2.min.js', __FILE__), ['jquery'], '4.1.0', true);
 
             $location_require_selection = isset($mulopimfwc_options['location_require_selection']) ? $mulopimfwc_options['location_require_selection'] : 'off';
@@ -2014,22 +2053,55 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         public function filter_shortcode_products($query_args)
         {
-            $location = $this->get_current_location();
-            global $mulopimfwc_options;
-            $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
-            if (!$location || $location === 'all-products' || $enable_all_locations === 'on') {
+            // Check if strict_filtering is enabled
+            $options = $this->get_display_options();
+            if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
                 return $query_args;
             }
 
-            // if (!isset($query_args['tax_query'])) {
-            //     $query_args['tax_query'] = [];
-            // }
+            $location = $this->get_current_location();
+            global $mulopimfwc_options;
+            $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
+            
+            if (!$location || $location === 'all-products') {
+                return $query_args;
+            }
 
-            $query_args['tax_query'][] = [
-                'taxonomy' => 'mulopimfwc_store_location',
-                'field' => 'slug',
-                'terms' => $location,
-            ];
+            // Check if location filter already exists to avoid duplicates
+            if (!isset($query_args['tax_query'])) {
+                $query_args['tax_query'] = [];
+            }
+
+            $has_location_filter = false;
+            foreach ($query_args['tax_query'] as $tax) {
+                if (isset($tax['taxonomy']) && $tax['taxonomy'] === 'mulopimfwc_store_location') {
+                    $has_location_filter = true;
+                    break;
+                }
+            }
+
+            if (!$has_location_filter) {
+                if ($enable_all_locations === 'on') {
+                    $query_args['tax_query'][] = [
+                        'relation' => 'OR',
+                        [
+                            'taxonomy' => 'mulopimfwc_store_location',
+                            'field' => 'slug',
+                            'terms' => $location,
+                        ],
+                        [
+                            'taxonomy' => 'mulopimfwc_store_location',
+                            'operator' => 'NOT EXISTS',
+                        ],
+                    ];
+                } else {
+                    $query_args['tax_query'][] = [
+                        'taxonomy' => 'mulopimfwc_store_location',
+                        'field' => 'slug',
+                        'terms' => $location,
+                    ];
+                }
+            }
 
             return $query_args;
         }
@@ -2076,7 +2148,10 @@ if (!function_exists('mulopimfwc_get_values')) {
             $is_user_logged_in = is_user_logged_in();
             $current_user = wp_get_current_user();
             // mulopimfwc_display_options[show_all_products_admin]
-            $options = get_option('mulopimfwc_display_options', []);
+            global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
             $show_all_products_admin = isset($options['show_all_products_admin']) ? $options['show_all_products_admin'] : 'off';
             $is_admin_or_manager = in_array('administrator', $current_user->roles) || in_array('shop_manager', $current_user->roles);
             $selected_location = $this->get_current_location();
@@ -2105,10 +2180,60 @@ if (!function_exists('mulopimfwc_get_values')) {
         }
 
 
+        /**
+         * Get display options with request-level caching
+         * Loads options once per request to prevent N+1 database queries
+         * 
+         * @return array Display options array
+         */
         private function get_display_options()
         {
-            $options = get_option('mulopimfwc_display_options', []);
-            return $options;
+            // Return cached value if available
+            if (self::$cached_display_options !== null) {
+                return self::$cached_display_options;
+            }
+
+            // Load from database and cache
+            self::$cached_display_options = get_option('mulopimfwc_display_options', []);
+            
+            return self::$cached_display_options;
+        }
+
+        /**
+         * Clear the display options cache
+         * Should be called when options are updated
+         * 
+         * @return void
+         */
+        public static function clear_display_options_cache()
+        {
+            self::$cached_display_options = null;
+        }
+
+        /**
+         * Get location term with request-level caching
+         * Prevents repeated get_term_by() calls that hit the database
+         * 
+         * @param string $location_slug Location slug to get term for
+         * @return WP_Term|false Location term object or false if not found
+         */
+        private function get_cached_location_term($location_slug)
+        {
+            // Sanitize location slug
+            $location_slug = sanitize_text_field($location_slug);
+            
+            // Return cached value if available
+            if (isset(self::$cached_location_terms[$location_slug])) {
+                return self::$cached_location_terms[$location_slug];
+            }
+
+            // Load from database and cache
+            $location_term = get_term_by('slug', $location_slug, 'mulopimfwc_store_location');
+            
+            // Cache the result (even if false, to avoid repeated queries)
+            self::$cached_location_terms[$location_slug] = $location_term;
+            
+            return $location_term;
         }
 
         private function get_title_with_location($title, $product_id)
@@ -2166,6 +2291,75 @@ if (!function_exists('mulopimfwc_get_values')) {
             }
         }
 
+        /**
+         * Batch load term relationships for multiple products in a single query
+         * This eliminates N+1 query problems when checking multiple products
+         * 
+         * @param array $product_ids Array of product IDs to load
+         * @return void
+         */
+        private function batch_load_product_locations($product_ids)
+        {
+            // Filter out already loaded products
+            $product_ids = array_diff(array_map('intval', $product_ids), self::$batch_loaded_products);
+            
+            if (empty($product_ids)) {
+                return; // All products already loaded
+            }
+            
+            // Initialize cache if needed
+            if (self::$product_locations_cache === null) {
+                self::$product_locations_cache = [];
+            }
+            
+            // Load all term relationships in one query
+            global $wpdb;
+            
+            // Sanitize product IDs and create safe IN clause
+            $product_ids = array_map('intval', $product_ids);
+            $ids_placeholder = implode(',', $product_ids);
+            
+            // Use prepare for taxonomy, but IDs are already sanitized as integers
+            $query = $wpdb->prepare(
+                "SELECT tr.object_id, t.slug 
+                 FROM {$wpdb->term_relationships} tr
+                 INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+                 INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+                 WHERE tr.object_id IN ($ids_placeholder) 
+                 AND tt.taxonomy = %s",
+                'mulopimfwc_store_location'
+            );
+            
+            $results = $wpdb->get_results($query);
+            
+            // Organize results by product_id
+            foreach ($results as $row) {
+                $product_id = (int) $row->object_id;
+                $location_slug = rawurldecode($row->slug);
+                
+                if (!isset(self::$product_locations_cache[$product_id])) {
+                    self::$product_locations_cache[$product_id] = [];
+                }
+                
+                self::$product_locations_cache[$product_id][] = $location_slug;
+            }
+            
+            // Mark products with no locations (empty array) to avoid re-querying
+            foreach ($product_ids as $product_id) {
+                if (!isset(self::$product_locations_cache[$product_id])) {
+                    self::$product_locations_cache[$product_id] = []; // Empty = no locations
+                }
+                self::$batch_loaded_products[] = $product_id;
+            }
+        }
+        
+        /**
+         * Check if a product belongs to the current location
+         * Uses request-level cache to prevent N+1 query problems
+         * 
+         * @param int $product_id Product ID to check
+         * @return bool True if product belongs to current location
+         */
         private function product_belongs_to_location($product_id)
         {
             $location = $this->get_current_location();
@@ -2176,11 +2370,26 @@ if (!function_exists('mulopimfwc_get_values')) {
                 return true;
             }
 
-            $terms = array_map('rawurldecode', wp_get_object_terms($product_id, 'mulopimfwc_store_location', ['fields' => 'slugs']));
+            $product_id = (int) $product_id;
+            
+            // Check cache first
+            if (self::$product_locations_cache !== null && isset(self::$product_locations_cache[$product_id])) {
+                $terms = self::$product_locations_cache[$product_id];
+            } else {
+                // Not in cache, load it (fallback for single calls)
+                $this->batch_load_product_locations([$product_id]);
+                $terms = isset(self::$product_locations_cache[$product_id]) 
+                    ? self::$product_locations_cache[$product_id] 
+                    : [];
+            }
+            
+            // If product has no locations and enable_all_locations is on, it's available everywhere
             if (empty($terms) && $enable_all_locations === 'on') {
                 return true; // Product is available in all locations
             }
-            return (!is_wp_error($terms) && in_array($location, $terms));
+            
+            // Check if current location is in the product's locations
+            return in_array($location, $terms, true);
         }
 
         public function filter_product_blocks($html, $data, $product)
@@ -2193,12 +2402,21 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         public function filter_ajax_searched_products($products)
         {
-            $location = $this->get_current_location();
-            global $mulopimfwc_options;
-            $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
+            // Check if strict_filtering is enabled
+            $options = $this->get_display_options();
+            if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
+                return $products;
+            }
 
+            $location = $this->get_current_location();
             if (!$location || $location === 'all-products') {
                 return $products;
+            }
+
+            // Batch load all product locations in one query (prevents N+1)
+            $product_ids = array_map('intval', array_keys($products));
+            if (!empty($product_ids)) {
+                $this->batch_load_product_locations($product_ids);
             }
 
             foreach ($products as $id => $product) {
@@ -2212,21 +2430,55 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         public function filter_rest_api_products($args, $request)
         {
-            $location = $this->get_current_location();
+            // Check if strict_filtering is enabled
+            $options = $this->get_display_options();
+            if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
+                return $args;
+            }
 
+            $location = $this->get_current_location();
             if (!$location || $location === 'all-products') {
                 return $args;
             }
 
-            // if (!isset($args['tax_query'])) {
-            //     $args['tax_query'] = [];
-            // }
+            // Check if location filter already exists to avoid duplicates
+            if (!isset($args['tax_query'])) {
+                $args['tax_query'] = [];
+            }
 
-            $args['tax_query'][] = [
-                'taxonomy' => 'mulopimfwc_store_location',
-                'field' => 'slug',
-                'terms' => $location,
-            ];
+            $has_location_filter = false;
+            foreach ($args['tax_query'] as $tax) {
+                if (isset($tax['taxonomy']) && $tax['taxonomy'] === 'mulopimfwc_store_location') {
+                    $has_location_filter = true;
+                    break;
+                }
+            }
+
+            if (!$has_location_filter) {
+                global $mulopimfwc_options;
+                $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
+
+                if ($enable_all_locations === 'on') {
+                    $args['tax_query'][] = [
+                        'relation' => 'OR',
+                        [
+                            'taxonomy' => 'mulopimfwc_store_location',
+                            'field' => 'slug',
+                            'terms' => $location,
+                        ],
+                        [
+                            'taxonomy' => 'mulopimfwc_store_location',
+                            'operator' => 'NOT EXISTS',
+                        ],
+                    ];
+                } else {
+                    $args['tax_query'][] = [
+                        'taxonomy' => 'mulopimfwc_store_location',
+                        'field' => 'slug',
+                        'terms' => $location,
+                    ];
+                }
+            }
 
             return $args;
         }
@@ -2252,6 +2504,18 @@ if (!function_exists('mulopimfwc_get_values')) {
             // Ensure $cart_contents is an array
             if (!is_array($cart_contents)) {
                 return $cart_contents;
+            }
+
+            // Batch load all product locations in one query (prevents N+1)
+            $product_ids = [];
+            foreach ($cart_contents as $item) {
+                if (is_array($item) && isset($item['product_id'])) {
+                    $product_ids[] = (int) $item['product_id'];
+                }
+            }
+            
+            if (!empty($product_ids)) {
+                $this->batch_load_product_locations($product_ids);
             }
 
             foreach ($cart_contents as $key => $item) {
@@ -2282,6 +2546,12 @@ if (!function_exists('mulopimfwc_get_values')) {
                 return;
             }
 
+            // Batch load all product locations in one query (prevents N+1)
+            $product_ids = array_map('intval', array_filter($viewed_products));
+            if (!empty($product_ids)) {
+                $this->batch_load_product_locations($product_ids);
+            }
+
             $filtered_products = [];
             foreach ($viewed_products as $product_id) {
                 if ($this->product_belongs_to_location($product_id)) {
@@ -2295,10 +2565,62 @@ if (!function_exists('mulopimfwc_get_values')) {
             }
         }
 
+        /**
+         * Handle unavailable single product pages based on settings
+         * Shows 404 or allows page to load with message
+         */
+        public function handle_unavailable_single_product()
+        {
+            // Only on single product pages
+            if (!is_singular('product')) {
+                return;
+            }
 
+            // Check if strict_filtering is enabled
+            $options = $this->get_display_options();
+            if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
+                return;
+            }
 
+            // Get current location
+            $location = $this->get_current_location();
+            if (!$location || $location === 'all-products') {
+                return;
+            }
 
+            // Get the product
+            global $post;
+            if (!$post) {
+                return;
+            }
 
+            $product_id = $post->ID;
+            
+            // Check if product belongs to location
+            if ($this->product_belongs_to_location($product_id)) {
+                return; // Product is available, no action needed
+            }
+
+            // Product is not available - check behavior setting
+            $unavailable_behavior = isset($options['unavailable_product_behavior']) ? $options['unavailable_product_behavior'] : 'show_404';
+
+            if ($unavailable_behavior === 'show_404') {
+                // Show 404 page
+                global $wp_query;
+                $wp_query->set_404();
+                status_header(404);
+                nocache_headers();
+            } else {
+                // show_with_message - allow page to load, message will be shown by existing hooks
+                // Add a notice at the top of the product page
+                add_action('woocommerce_before_single_product', function() {
+                    echo '<div class="woocommerce-info woocommerce-message" style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 20px;">';
+                    echo '<strong>' . esc_html__('Product Not Available', 'multi-location-product-and-inventory-management') . '</strong><br>';
+                    echo esc_html__('This product is not available in your currently selected location.', 'multi-location-product-and-inventory-management');
+                    echo '</div>';
+                }, 5);
+            }
+        }
 
 
         private function should_apply_filtering($section)
@@ -2327,59 +2649,235 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         public function filter_products_by_location($query)
         {
-            if (is_admin() || !$query->is_main_query()) {
+            // Skip admin queries
+            if (is_admin()) {
                 return;
             }
 
-            $section = '';
-            if (
-                (
-                    is_shop() ||
-                    is_product_category() ||
-                    is_product_tag() ||
-                    is_post_type_archive('product') ||
-                    is_product_taxonomy()
-                )
-                &&
-                !is_tax('mulopimfwc_store_location')
-            ) {
-                $section = 'shop';
-            } elseif (is_search()) {
-                $section = 'search';
-            } else {
+            // Check if this is a product query
+            $post_type = $query->get('post_type');
+            if (empty($post_type)) {
+                // If no post_type is set, check if it's a product archive or single product page
+                if (!is_product() && !is_shop() && !is_product_category() && !is_product_tag() && !is_product_taxonomy() && !is_post_type_archive('product')) {
+                    return;
+                }
+                // Assume it's a product query if we're on a product-related page
+                $post_type = 'product';
+            } elseif (!in_array('product', (array) $post_type)) {
+                // Not a product query, skip
                 return;
             }
 
-            $location = $this->get_filtered_location($section);
-            if (!$location) {
+            // Check if strict_filtering is enabled
+            $options = $this->get_display_options();
+            if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
                 return;
             }
 
+            // Get current location
+            $location = $this->get_current_location();
+            if (!$location || $location === 'all-products') {
+                return;
+            }
+
+            // Check if we should skip filtering for single product pages when setting is "show_with_message"
+            $unavailable_behavior = isset($options['unavailable_product_behavior']) ? $options['unavailable_product_behavior'] : 'show_404';
+            if ($unavailable_behavior === 'show_with_message') {
+                // Check if this is a single product query
+                // In pre_get_posts, we need to check the query parameters directly
+                $p = $query->get('p');
+                $page_id = $query->get('page_id');
+                $name = $query->get('name');
+                $post_name = $query->get('post_name');
+                
+                // Check if it's the main query and looks like a single product page
+                if ($query->is_main_query()) {
+                    // Check request URI pattern
+                    $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+                    if ($request_uri && preg_match('#/product/[^/]+/?$#', $request_uri)) {
+                        // This looks like a single product page, skip filtering
+                        return;
+                    }
+                }
+                
+                // Also check direct query parameters
+                if (($p || $page_id || $name || $post_name) && $post_type === 'product') {
+                    // This looks like a single product query, skip filtering
+                    return;
+                }
+            }
+
+            // Apply location filtering to ALL product queries when strict_filtering is enabled
             $tax_query = (array) $query->get('tax_query');
             global $mulopimfwc_options;
             $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
 
-            if ($enable_all_locations === 'on') {
-                $tax_query[] = [
-                    'relation' => 'OR',
-                    [
+            // Check if location filter already exists to avoid duplicates
+            $has_location_filter = false;
+            foreach ($tax_query as $tax) {
+                if (isset($tax['taxonomy']) && $tax['taxonomy'] === 'mulopimfwc_store_location') {
+                    $has_location_filter = true;
+                    break;
+                }
+            }
+
+            if (!$has_location_filter) {
+                if ($enable_all_locations === 'on') {
+                    $tax_query[] = [
+                        'relation' => 'OR',
+                        [
+                            'taxonomy' => 'mulopimfwc_store_location',
+                            'field' => 'slug',
+                            'terms' => $location,
+                        ],
+                        [
+                            'taxonomy' => 'mulopimfwc_store_location',
+                            'operator' => 'NOT EXISTS',
+                        ],
+                    ];
+                } else {
+                    $tax_query[] = [
                         'taxonomy' => 'mulopimfwc_store_location',
                         'field' => 'slug',
                         'terms' => $location,
-                    ],
-                    [
-                        'taxonomy' => 'mulopimfwc_store_location',
-                        'operator' => 'NOT EXISTS',
-                    ],
-                ];
-            } else {
-                $tax_query[] = [
-                    'taxonomy' => 'mulopimfwc_store_location',
-                    'field' => 'slug',
-                    'terms' => $location,
-                ];
+                    ];
+                }
+                $query->set('tax_query', $tax_query);
             }
-            $query->set('tax_query', $tax_query);
+        }
+
+        /**
+         * Filter product queries using posts_clauses to catch queries that bypass pre_get_posts
+         * This ensures ALL database product queries are filtered when strict_filtering is enabled
+         */
+        public function filter_products_by_location_clauses($clauses, $query)
+        {
+            // Skip admin queries
+            if (is_admin()) {
+                return $clauses;
+            }
+
+            // Check if this is a product query
+            $post_type = $query->get('post_type');
+            if (empty($post_type)) {
+                // If no post_type is set, check if it's a product-related page
+                if (!is_product() && !is_shop() && !is_product_category() && !is_product_tag() && !is_product_taxonomy() && !is_post_type_archive('product')) {
+                    return $clauses;
+                }
+            } elseif (!in_array('product', (array) $post_type)) {
+                // Not a product query, skip
+                return $clauses;
+            }
+
+            // Check if strict_filtering is enabled
+            $options = $this->get_display_options();
+            if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
+                return $clauses;
+            }
+
+            // Get current location
+            $location = $this->get_current_location();
+            if (!$location || $location === 'all-products') {
+                return $clauses;
+            }
+
+            // Check if we should skip filtering for single product pages when setting is "show_with_message"
+            $unavailable_behavior = isset($options['unavailable_product_behavior']) ? $options['unavailable_product_behavior'] : 'show_404';
+            if ($unavailable_behavior === 'show_with_message') {
+                // Check if this is a single product query
+                // For main queries, check multiple ways to detect single product pages
+                if ($query->is_main_query()) {
+                    // Method 1: Check global $wp query_vars
+                    global $wp;
+                    if (isset($wp->query_vars['post_type']) && $wp->query_vars['post_type'] === 'product' && 
+                        (isset($wp->query_vars['p']) || isset($wp->query_vars['name']) || isset($wp->query_vars['page_id']))) {
+                        // This is a single product page query, skip filtering
+                        return $clauses;
+                    }
+                    
+                    // Method 2: Check request URI pattern (product slug in URL)
+                    $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+                    if ($request_uri && preg_match('#/product/[^/]+/?$#', $request_uri)) {
+                        // This looks like a single product page URL, skip filtering
+                        return $clauses;
+                    }
+                }
+                
+                // Method 3: Check direct query parameters (for any query)
+                $p = $query->get('p');
+                $page_id = $query->get('page_id');
+                $name = $query->get('name');
+                $post_name = $query->get('post_name');
+                if (($p || $page_id || $name || $post_name) && $post_type === 'product') {
+                    // This looks like a single product query, skip filtering
+                    return $clauses;
+                }
+            }
+
+            // Get location term (cached)
+            $location_term = $this->get_cached_location_term($location);
+            if (!$location_term || is_wp_error($location_term)) {
+                return $clauses;
+            }
+
+            global $wpdb, $mulopimfwc_options;
+            $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
+
+            // Check if location filter is already in tax_query (handled by pre_get_posts)
+            $tax_query = $query->get('tax_query');
+            $has_location_filter = false;
+            if (is_array($tax_query)) {
+                foreach ($tax_query as $tax) {
+                    if (isset($tax['taxonomy']) && $tax['taxonomy'] === 'mulopimfwc_store_location') {
+                        $has_location_filter = true;
+                        break;
+                    }
+                }
+            }
+
+            // Only apply if not already filtered via tax_query
+            if (!$has_location_filter) {
+                if ($enable_all_locations === 'on') {
+                    // Include products with location OR products with no location assigned
+                    // Use a subquery approach to avoid JOIN conflicts
+                    $clauses['where'] .= $wpdb->prepare(
+                        " AND (
+                            {$wpdb->posts}.ID IN (
+                                SELECT object_id FROM {$wpdb->term_relationships} 
+                                INNER JOIN {$wpdb->term_taxonomy} ON {$wpdb->term_relationships}.term_taxonomy_id = {$wpdb->term_taxonomy}.term_taxonomy_id
+                                WHERE {$wpdb->term_taxonomy}.taxonomy = 'mulopimfwc_store_location'
+                                AND {$wpdb->term_relationships}.term_taxonomy_id = %d
+                            )
+                            OR {$wpdb->posts}.ID NOT IN (
+                                SELECT object_id FROM {$wpdb->term_relationships} 
+                                INNER JOIN {$wpdb->term_taxonomy} ON {$wpdb->term_relationships}.term_taxonomy_id = {$wpdb->term_taxonomy}.term_taxonomy_id
+                                WHERE {$wpdb->term_taxonomy}.taxonomy = 'mulopimfwc_store_location'
+                            )
+                        )",
+                        $location_term->term_taxonomy_id
+                    );
+                } else {
+                    // Only include products with the selected location
+                    // Add JOIN for term relationships only if not already present
+                    if (strpos($clauses['join'], 'INNER JOIN ' . $wpdb->term_relationships . ' AS mulopimfwc_tr') === false) {
+                        $clauses['join'] .= " INNER JOIN {$wpdb->term_relationships} AS mulopimfwc_tr ON ({$wpdb->posts}.ID = mulopimfwc_tr.object_id)";
+                        $clauses['join'] .= $wpdb->prepare(
+                            " INNER JOIN {$wpdb->term_taxonomy} AS mulopimfwc_tt ON (mulopimfwc_tr.term_taxonomy_id = mulopimfwc_tt.term_taxonomy_id AND mulopimfwc_tt.taxonomy = 'mulopimfwc_store_location')"
+                        );
+                    }
+                    $clauses['where'] .= $wpdb->prepare(
+                        " AND mulopimfwc_tr.term_taxonomy_id = %d",
+                        $location_term->term_taxonomy_id
+                    );
+                }
+
+                // Add GROUP BY to handle multiple term relationships
+                if (empty($clauses['groupby'])) {
+                    $clauses['groupby'] = "{$wpdb->posts}.ID";
+                }
+            }
+
+            return $clauses;
         }
 
 
@@ -2390,6 +2888,11 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             if (!$location) {
                 return $related_products;
+            }
+
+            // Batch load all product locations in one query (prevents N+1)
+            if (!empty($related_products)) {
+                $this->batch_load_product_locations(array_map('intval', $related_products));
             }
 
             return array_filter($related_products, [$this, 'product_belongs_to_location']);
@@ -2403,6 +2906,21 @@ if (!function_exists('mulopimfwc_get_values')) {
                 return $cross_sells;
             }
 
+            // Batch load all product locations in one query (prevents N+1)
+            if (!empty($cross_sells)) {
+                $product_ids = [];
+                foreach ($cross_sells as $product) {
+                    if (is_object($product) && method_exists($product, 'get_id')) {
+                        $product_ids[] = $product->get_id();
+                    } elseif (is_numeric($product)) {
+                        $product_ids[] = (int) $product;
+                    }
+                }
+                if (!empty($product_ids)) {
+                    $this->batch_load_product_locations($product_ids);
+                }
+            }
+
             return array_filter($cross_sells, [$this, 'product_belongs_to_location']);
         }
 
@@ -2412,6 +2930,11 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             if (!$location) {
                 return $upsell_ids;
+            }
+
+            // Batch load all product locations in one query (prevents N+1)
+            if (!empty($upsell_ids)) {
+                $this->batch_load_product_locations(array_map('intval', $upsell_ids));
             }
 
             return array_filter($upsell_ids, [$this, 'product_belongs_to_location']);
@@ -2476,7 +2999,10 @@ if (!function_exists('mulopimfwc_get_values')) {
                 wp_send_json_error(['message' => __('Invalid location.', 'multi-location-product-and-inventory-management')]);
             }
 
-            $options = get_option('mulopimfwc_display_options', []);
+            global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
 
             $allow_mixed = isset($options['allow_mixed_location_cart']) && mulopimfwc_premium_feature()
                 ? $options['allow_mixed_location_cart']
@@ -2504,7 +3030,7 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         function custom_admin_styles()
         {
-            wp_enqueue_style('mulopimfwc-custom-admin-style', plugin_dir_url(__FILE__) . 'assets/css/admin-style.css', array(), "1.0.7");
+            wp_enqueue_style('mulopimfwc-custom-admin-style', plugin_dir_url(__FILE__) . 'assets/css/admin-style.css', array(), "1.0.7.5");
         }
 
         private function set_store_location_cookie($location)
@@ -2603,7 +3129,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 return false;
             }
 
-            $location_term = get_term_by('slug', $location_slug, 'mulopimfwc_store_location');
+            $location_term = $this->get_cached_location_term($location_slug);
             if ($location_term && !is_wp_error($location_term)) {
                 $is_disabled = get_post_meta($product_id, '_location_disabled_' . $location_term->term_id, true);
                 if (!empty($is_disabled)) {
@@ -2626,7 +3152,247 @@ if (!function_exists('mulopimfwc_get_values')) {
 
     register_uninstall_hook(__FILE__, 'mulopimfwc_settings_remove');
 
-    register_activation_hook(__FILE__, 'mulopimfwc_settings_remove');
+    register_activation_hook(__FILE__, 'mulopimfwc_activate_plugin');
+
+    /**
+     * Plugin activation hook
+     * Sets up database indexes for optimal performance
+     */
+    function mulopimfwc_activate_plugin()
+    {
+        mulopimfwc_add_database_indexes();
+    }
+
+    /**
+     * Add admin action to manually create indexes for existing installations
+     */
+    add_action('admin_init', function() {
+        // Allow manual index creation via admin action
+        if (isset($_GET['mulopimfwc_create_indexes']) && current_user_can('manage_options')) {
+            check_admin_referer('mulopimfwc_create_indexes');
+            mulopimfwc_add_database_indexes();
+            wp_redirect(add_query_arg(['mulopimfwc_indexes_created' => '1'], remove_query_arg('mulopimfwc_create_indexes')));
+            exit;
+        }
+    });
+
+    /**
+     * Show admin notice if indexes haven't been created yet
+     */
+    add_action('admin_notices', function() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $indexes_added = get_option('mulopimfwc_database_indexes_added', false);
+        if ($indexes_added) {
+            // Show success message if just created
+            if (isset($_GET['mulopimfwc_indexes_created'])) {
+                echo '<div class="notice notice-success is-dismissible"><p>';
+                echo esc_html__('Database indexes have been created successfully. Query performance should be improved.', 'multi-location-product-and-inventory-management');
+                echo '</p></div>';
+            }
+            return;
+        }
+
+        // Show notice to create indexes for existing installations
+        $create_url = wp_nonce_url(
+            add_query_arg('mulopimfwc_create_indexes', '1'),
+            'mulopimfwc_create_indexes'
+        );
+        echo '<div class="notice notice-info is-dismissible"><p>';
+        echo esc_html__('Multi Location Plugin: For optimal performance with large datasets, please create database indexes.', 'multi-location-product-and-inventory-management');
+        echo ' <a href="' . esc_url($create_url) . '" class="button button-primary">';
+        echo esc_html__('Create Indexes Now', 'multi-location-product-and-inventory-management');
+        echo '</a></p></div>';
+    });
+
+    /**
+     * Add database indexes for optimal query performance
+     * Improves performance on large datasets (10,000+ products)
+     * 
+     * Note: WordPress core tables already have some indexes, but we add composite
+     * indexes that are specifically optimized for our location-based queries.
+     */
+    function mulopimfwc_add_database_indexes()
+    {
+        global $wpdb;
+
+        // Check if indexes have already been added
+        $indexes_added = get_option('mulopimfwc_database_indexes_added', false);
+        if ($indexes_added) {
+            return; // Indexes already exist
+        }
+
+        $indexes_created = [];
+        $errors = [];
+
+        // 1. Check if wp_term_relationships already has composite index
+        // WordPress core has PRIMARY KEY on (object_id, term_taxonomy_id), which serves as composite index
+        // So we don't need to add another one - the PRIMARY KEY already covers our use case
+        $table_1 = $wpdb->term_relationships;
+        $has_primary_key = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.table_constraints 
+             WHERE table_schema = %s 
+             AND table_name = %s 
+             AND constraint_type = 'PRIMARY KEY'",
+            DB_NAME,
+            $table_1
+        ));
+
+        // WordPress core already has optimal indexing for term_relationships via PRIMARY KEY
+        // No additional index needed
+
+        // 2. Composite index on wp_postmeta for faster location meta queries
+        // WordPress core has separate indexes on post_id and meta_key, but composite (post_id, meta_key)
+        // is more efficient for queries filtering by both (which we do frequently)
+        $index_name_2 = 'mulopimfwc_pm_post_meta';
+        $table_2 = $wpdb->postmeta;
+        
+        // Check if composite index already exists
+        $index_exists_2 = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.statistics 
+             WHERE table_schema = %s 
+             AND table_name = %s 
+             AND index_name = %s",
+            DB_NAME,
+            $table_2,
+            $index_name_2
+        ));
+
+        // Also check if there's already a composite index with different name
+        // Look for any index that has both post_id (seq 1) and meta_key (seq 2)
+        $has_composite = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT s1.index_name) 
+             FROM information_schema.statistics s1
+             INNER JOIN information_schema.statistics s2 
+             ON s1.table_schema = s2.table_schema 
+             AND s1.table_name = s2.table_name 
+             AND s1.index_name = s2.index_name
+             WHERE s1.table_schema = %s 
+             AND s1.table_name = %s 
+             AND s1.column_name = 'post_id' 
+             AND s1.seq_in_index = 1
+             AND s2.column_name = 'meta_key' 
+             AND s2.seq_in_index = 2",
+            DB_NAME,
+            $table_2
+        ));
+
+        if (!$index_exists_2 && !$has_composite) {
+            // Only create if it doesn't exist and no other composite index exists
+            $sql_2 = "CREATE INDEX {$index_name_2} ON {$table_2} (post_id, meta_key)";
+            $result_2 = $wpdb->query($sql_2);
+            if ($result_2 !== false) {
+                $indexes_created[] = $index_name_2;
+            } else {
+                $errors[] = sprintf(
+                    __('Failed to create index %s: %s', 'multi-location-product-and-inventory-management'),
+                    $index_name_2,
+                    $wpdb->last_error
+                );
+            }
+        }
+
+        // 3. Additional index on wp_postmeta.meta_key for location-specific meta lookups
+        // This helps when querying by meta_key pattern (e.g., _location_stock_*)
+        $index_name_3 = 'mulopimfwc_pm_meta_key';
+        
+        // Check if meta_key index already exists (WordPress core may have it)
+        $meta_key_index_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.statistics 
+             WHERE table_schema = %s 
+             AND table_name = %s 
+             AND column_name = 'meta_key' 
+             AND seq_in_index = 1",
+            DB_NAME,
+            $table_2
+        ));
+
+        if (!$meta_key_index_exists && !$index_exists_2) {
+            // Only add if no meta_key index exists and we're not using composite
+            $sql_3 = "CREATE INDEX {$index_name_3} ON {$table_2} (meta_key)";
+            $result_3 = $wpdb->query($sql_3);
+            if ($result_3 !== false) {
+                $indexes_created[] = $index_name_3;
+            } else {
+                $errors[] = sprintf(
+                    __('Failed to create index %s: %s', 'multi-location-product-and-inventory-management'),
+                    $index_name_3,
+                    $wpdb->last_error
+                );
+            }
+        }
+
+        // Mark indexes as added if any were created or if optimal indexes already exist
+        if (!empty($indexes_created) || ($has_primary_key && ($index_exists_2 || $has_composite || $meta_key_index_exists))) {
+            update_option('mulopimfwc_database_indexes_added', true);
+            
+            // Log errors if any occurred (but don't fail activation)
+            if (!empty($errors)) {
+                error_log('Multi Location Plugin: Index creation errors: ' . implode(', ', $errors));
+            }
+        }
+    }
+
+    /**
+     * Remove database indexes on plugin uninstall (optional)
+     * Note: We keep indexes on deactivation as they improve performance
+     * and don't cause issues. Only remove on uninstall if explicitly requested.
+     */
+    function mulopimfwc_remove_database_indexes()
+    {
+        global $wpdb;
+
+        $indexes_removed = [];
+
+        // Remove postmeta composite index
+        $index_name_2 = 'mulopimfwc_pm_post_meta';
+        $table_2 = $wpdb->postmeta;
+        
+        $index_exists_2 = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.statistics 
+             WHERE table_schema = %s 
+             AND table_name = %s 
+             AND index_name = %s",
+            DB_NAME,
+            $table_2,
+            $index_name_2
+        ));
+
+        if ($index_exists_2) {
+            $sql_2 = "DROP INDEX {$index_name_2} ON {$table_2}";
+            $result_2 = $wpdb->query($sql_2);
+            if ($result_2 !== false) {
+                $indexes_removed[] = $index_name_2;
+            }
+        }
+
+        // Remove postmeta meta_key index
+        $index_name_3 = 'mulopimfwc_pm_meta_key';
+        
+        $index_exists_3 = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.statistics 
+             WHERE table_schema = %s 
+             AND table_name = %s 
+             AND index_name = %s",
+            DB_NAME,
+            $table_2,
+            $index_name_3
+        ));
+
+        if ($index_exists_3) {
+            $sql_3 = "DROP INDEX {$index_name_3} ON {$table_2}";
+            $result_3 = $wpdb->query($sql_3);
+            if ($result_3 !== false) {
+                $indexes_removed[] = $index_name_3;
+            }
+        }
+
+        if (!empty($indexes_removed)) {
+            delete_option('mulopimfwc_database_indexes_added');
+        }
+    }
 
     function mulopimfwc_settings_remove()
     {
@@ -2634,6 +3400,9 @@ if (!function_exists('mulopimfwc_get_values')) {
         if (get_option('mulopimfwc_display_options') !== false) {
             delete_option('mulopimfwc_display_options');
         }
+        
+        // Optionally remove indexes on uninstall (commented out to preserve performance)
+        // mulopimfwc_remove_database_indexes();
     }
 
 
@@ -2793,7 +3562,7 @@ if (!function_exists('mulopimfwc_get_values')) {
             $this->analytics = new mulopimfwc_anaylytics(
                 '04',
                 'https://plugincy.com/wp-json/product-analytics/v1',
-                "1.0.7",
+                "1.0.7.5",
                 'Multi Location Product & Inventory Management for WooCommerce',
                 __FILE__ // Pass the main plugin file
             );
@@ -2861,7 +3630,10 @@ if (!function_exists('mulopimfwc_get_location_cookie_expiry_days')) {
      */
     function mulopimfwc_get_location_cookie_expiry_days(): int
     {
-        $options = get_option('mulopimfwc_display_options', []);
+        global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
         $value = isset($options['location_cookie_expiry']) && is_numeric($options['location_cookie_expiry'])
             ? (int)$options['location_cookie_expiry']
             : 30;

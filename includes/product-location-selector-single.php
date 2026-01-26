@@ -7,9 +7,9 @@
  * Supports multiple display positions and layouts with secure AJAX handling.
  * 
  * @package Multi_Location_Product_Inventory
- * @version 1.0.7
+ * @version 1.0.7.5
  * @author Your Name
- * @since 1.0.7
+ * @since 1.0.7.5
  */
 
 if (!defined('ABSPATH')) {
@@ -26,7 +26,7 @@ class MULOPIMFWC_Product_Location_Selector
     /**
      * Plugin version
      */
-    const VERSION = '1.0.7';
+    const VERSION = '1.0.7.5';
 
     /**
      * Available display positions
@@ -158,7 +158,10 @@ class MULOPIMFWC_Product_Location_Selector
      */
     private function is_location_display_enabled(): bool
     {
-        $options = get_option('mulopimfwc_display_options', []);
+        global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
         return isset($options['display_location_single_product']) &&
             $options['display_location_single_product'] === 'on';
     }
@@ -168,7 +171,11 @@ class MULOPIMFWC_Product_Location_Selector
      */
     private function load_options(): void
     {
-        $this->options = get_option('mulopimfwc_display_options', []);
+        global $mulopimfwc_options;
+            $options = is_array($mulopimfwc_options ?? null)
+                ? $mulopimfwc_options
+                : get_option('mulopimfwc_display_options', []);
+        $this->options = $options;
         $this->position = $this->options['location_display_position'] ?? 'after_price';
 
         // Validate position
