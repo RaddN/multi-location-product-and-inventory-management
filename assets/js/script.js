@@ -113,7 +113,9 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        const selectedLocation = getCookie('mulopimfwc_store_location');
+        const selectedLocation =
+            getCookie('mulopimfwc_store_location') ||
+            (mulopimfwc_locationWiseProducts.currentLocation || '');
         const needsSelection = !selectedLocation || selectedLocation === 'all-products';
         const $button = $('.single_add_to_cart_button');
 
