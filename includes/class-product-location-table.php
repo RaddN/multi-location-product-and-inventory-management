@@ -453,11 +453,15 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                 }, array_keys($variation['attributes']), $variation['attributes']));
 
                 $purchase_price = get_post_meta($variation['id'], '_purchase_price', true);
+                $purchase_quantity = get_post_meta($variation['id'], '_purchase_quantity', true);
 
                 $output .= '<div class="variation-purchase-price-item">';
                 $output .= '<strong>' . esc_html($variation_title) . '</strong>';
                 $output .= '<div class="purchase-price-item">';
-                $output .= '<span class="purchase-price-value">' . (!empty($purchase_price) ? wc_price($purchase_price) : __('Not set', 'multi-location-product-and-inventory-management')) . '</span>';
+                $output .= '<span class="purchase-price-value"> Price: ' . (!empty($purchase_price) ? wc_price($purchase_price) : __('Not set', 'multi-location-product-and-inventory-management')) . '</span>';
+                $output .= '</div>';
+                $output .= '<div class="purchase-price-item">';
+                $output .= '<span class="purchase-price-value"> Quantity: ' . ($purchase_quantity !== '' ? esc_html($purchase_quantity) : __('Not set', 'multi-location-product-and-inventory-management')) . '</span>';
                 $output .= '</div>';
                 $output .= '</div>';
             }
@@ -468,7 +472,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
             $output .= '<span class="purchase-price-value"> Price: ' . (!empty($purchase_price) ? wc_price($purchase_price) : __('Not set', 'multi-location-product-and-inventory-management')) . '</span>';
             $output .= '</div>';
             $output .= '<div class="purchase-price-item">';
-            $output .= '<span class="purchase-price-value"> Quantity: ' . (!empty($purchase_quantity) ? $purchase_quantity : __('Not set', 'multi-location-product-and-inventory-management')) . '</span>';
+            $output .= '<span class="purchase-price-value"> Quantity: ' . ($purchase_quantity !== '' ? esc_html($purchase_quantity) : __('Not set', 'multi-location-product-and-inventory-management')) . '</span>';
             $output .= '</div>';
         }
 
@@ -1102,6 +1106,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     'type' => $product_type,
                     'product_type' => $product_type, // Also include as product_type for JavaScript compatibility
                     'default' => [
+                        'manage_stock' => $product->get_manage_stock() ? 'yes' : 'no',
                         'stock_quantity' => $product->get_stock_quantity(),
                         'regular_price' => $product->get_regular_price(),
                         'sale_price' => $product->get_sale_price(),
@@ -1165,11 +1170,13 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                                 'id' => $variation_id,
                                 'attributes' => $attributes,
                                 'default' => [
+                                    'manage_stock' => $variation->get_manage_stock() ? 'yes' : 'no',
                                     'stock_quantity' => $variation->get_stock_quantity(),
                                     'regular_price' => $variation->get_regular_price(),
                                     'sale_price' => $variation->get_sale_price(),
                                     'backorders' => $variation->get_backorders(),
                                     'purchase_price' => get_post_meta($variation_id, '_purchase_price', true),
+                                    'purchase_quantity' => get_post_meta($variation_id, '_purchase_quantity', true),
                                 ],
                                 'locations' => [],
                             ];

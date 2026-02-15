@@ -8,6 +8,7 @@ class mulopimfwc_settings
     {
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_init', [$this, 'handle_reset_settings']);
+        add_action('admin_post_mulopimfwc_clear_cache', [$this, 'handle_clear_cache']);
     }
 
     /**
@@ -58,6 +59,42 @@ class mulopimfwc_settings
 
         // Redirect to avoid form resubmission
         wp_redirect(add_query_arg('settings-updated', 'true', wp_get_referer()));
+        exit;
+    }
+
+    /**
+     * Handle manual cache clear action from Advanced settings.
+     *
+     * @return void
+     */
+    public function handle_clear_cache()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have permission to perform this action.', 'multi-location-product-and-inventory-management'));
+        }
+
+        check_admin_referer('mulopimfwc_clear_cache_action');
+
+        $deleted_rows = 0;
+        if (function_exists('mulopimfwc_clear_plugin_caches')) {
+            $deleted_rows = (int) mulopimfwc_clear_plugin_caches('all');
+        }
+
+        $redirect_url = wp_get_referer();
+        if (!$redirect_url) {
+            $redirect_url = admin_url('admin.php?page=multi-location-product-and-inventory-management-settings');
+        }
+
+        $redirect_url = remove_query_arg(['mulopimfwc_cache_cleared', 'mulopimfwc_cache_deleted'], $redirect_url);
+        $redirect_url = add_query_arg(
+            [
+                'mulopimfwc_cache_cleared' => '1',
+                'mulopimfwc_cache_deleted' => $deleted_rows,
+            ],
+            $redirect_url
+        );
+
+        wp_safe_redirect($redirect_url);
         exit;
     }
 
@@ -1725,6 +1762,26 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             __('Contribute to Plugincy', 'multi-location-product-and-inventory-management'),
             function () {
                 $this->render_advance_checkbox("allow_data_share", __("We collect non-sensitive technical details from your website, like the PHP version and features usage, to help us troubleshoot issues faster, make informed development decisions, and build features that truly benefit you.", 'multi-location-product-and-inventory-management'));
+            },
+            'location-advance-settings',
+            'mulopimfwc_advanced_settings_section'
+        );
+
+        add_settings_field(
+            'mulopimfwc_clear_cache',
+            __('Clear Cache', 'multi-location-product-and-inventory-management'),
+            function () {
+                $clear_cache_url = wp_nonce_url(
+                    admin_url('admin-post.php?action=mulopimfwc_clear_cache'),
+                    'mulopimfwc_clear_cache_action'
+                );
+        ?>
+            <a href="<?php echo esc_url($clear_cache_url); ?>" class="button button-secondary" onclick="return confirm('<?php echo esc_js(__('Clear plugin caches now? Dashboard data will be recalculated on next load.', 'multi-location-product-and-inventory-management')); ?>');">
+                <span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+                <?php echo esc_html__('Clear Cache Now', 'multi-location-product-and-inventory-management'); ?>
+            </a>
+            <p class="description"><?php echo esc_html__('Use this if dashboard totals look stale. Cache is also auto-cleared when products/variations are updated.', 'multi-location-product-and-inventory-management'); ?></p>
+        <?php
             },
             'location-advance-settings',
             'mulopimfwc_advanced_settings_section'
@@ -3929,6 +3986,24 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                 </h1>
 
                 <div class="lwp-settings-inner-container">
+
+                    <?php if (isset($_GET['mulopimfwc_cache_cleared']) && sanitize_text_field(wp_unslash($_GET['mulopimfwc_cache_cleared'])) === '1') : ?>
+                        <div class="notice notice-success is-dismissible" style="margin: 0 0 16px 0;">
+                            <p>
+                                <?php
+                                $deleted_rows = isset($_GET['mulopimfwc_cache_deleted']) ? absint(wp_unslash($_GET['mulopimfwc_cache_deleted'])) : 0;
+                                if ($deleted_rows > 0) {
+                                    printf(
+                                        esc_html__('Plugin cache cleared successfully. Removed %d cached record(s).', 'multi-location-product-and-inventory-management'),
+                                        $deleted_rows
+                                    );
+                                } else {
+                                    echo esc_html__('Plugin cache cleared successfully.', 'multi-location-product-and-inventory-management');
+                                }
+                                ?>
+                            </p>
+                        </div>
+                    <?php endif; ?>
 
                     <div class="lwp-settings-left">
                         <div class="nav-tab-wrapper lwp-nav-tabs">

@@ -12,7 +12,7 @@ add_action('woocommerce_product_options_general_product_data', 'mulopimfwc_add_p
 
 function mulopimfwc_add_purchase_price_field()
 {
-    echo '<div class="options_group pricing">';
+    echo '<div class="options_group pricing show_if_simple show_if_external">';
 
     woocommerce_wp_text_input(
         array(
@@ -21,6 +21,7 @@ function mulopimfwc_add_purchase_price_field()
             'desc_tip'    => true,
             'description' => __('Enter the purchase price for this product.', 'multi-location-product-and-inventory-management'),
             'type'        => 'number',
+            'wrapper_class' => 'show_if_simple show_if_external',
             'custom_attributes' => array(
                 'step' => 'any',
                 'min'  => '0'
@@ -35,6 +36,7 @@ function mulopimfwc_add_purchase_price_field()
             'desc_tip'    => true,
             'description' => __('Enter the total quantity purchase for this product.', 'multi-location-product-and-inventory-management'),
             'type'        => 'number',
+            'wrapper_class' => 'show_if_simple show_if_external',
             'custom_attributes' => array(
                 'step' => 'any',
                 'min'  => '0'
@@ -52,6 +54,9 @@ function mulopimfwc_save_purchase_price_field($post_id)
 {
     // Verify nonce
     if (!isset($_POST['location_stock_price_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['location_stock_price_nonce'])), 'location_stock_price_nonce_action')) {
+        return;
+    }
+    if (!isset($_POST['_purchase_price']) && !isset($_POST['_purchase_quantity'])) {
         return;
     }
     $purchase_price = isset($_POST['_purchase_price']) ? wc_clean(sanitize_text_field(wp_unslash($_POST['_purchase_price']))) : '';
@@ -86,14 +91,14 @@ function mulopimfwc_add_variation_purchase_price_field($loop, $variation_data, $
             'id'            => '_purchase_quantity[' . $loop . ']',
             'label'         => __('Purchase Quantity', 'multi-location-product-and-inventory-management'),
             'desc_tip'      => true,
-            'description'   => __('Enter the purchase quantiy for this variation.', 'multi-location-product-and-inventory-management'),
+            'description'   => __('Enter the purchase quantity for this variation.', 'multi-location-product-and-inventory-management'),
             'value'         => get_post_meta($variation->ID, '_purchase_quantity', true),
             'type'          => 'number',
             'custom_attributes' => array(
                 'step' => 'any',
                 'min'  => '0'
             ),
-            'wrapper_class' => 'form-row form-row-first'
+            'wrapper_class' => 'form-row form-row-last'
         )
     );
 }
@@ -375,6 +380,73 @@ function mulopimfwc_get_location_term_id($location_slug)
     return $location ? $location->term_id : false;
 }
 
+/**
+ * Get assigned location slugs for a product with request-level caching.
+ *
+ * @param int $product_id Product ID.
+ * @return array
+ */
+function mulopimfwc_get_product_location_slugs($product_id)
+{
+    static $product_location_cache = [];
+
+    $product_id = absint($product_id);
+    if (!$product_id) {
+        return [];
+    }
+
+    if (isset($product_location_cache[$product_id])) {
+        return $product_location_cache[$product_id];
+    }
+
+    $terms = wp_get_object_terms($product_id, 'mulopimfwc_store_location', ['fields' => 'slugs']);
+    if (is_wp_error($terms)) {
+        $product_location_cache[$product_id] = [];
+        return [];
+    }
+
+    $product_location_cache[$product_id] = array_map('rawurldecode', (array) $terms);
+    return $product_location_cache[$product_id];
+}
+
+/**
+ * Check whether a location is currently assigned to a product/variation.
+ *
+ * For variations, this checks both variation ID and parent product ID.
+ *
+ * @param WC_Product|int $product_or_id Product object or ID.
+ * @param string         $location_slug Location slug.
+ * @return bool
+ */
+function mulopimfwc_is_location_assigned_to_product($product_or_id, $location_slug)
+{
+    if (empty($location_slug) || $location_slug === 'all-products') {
+        return true;
+    }
+
+    $product = $product_or_id instanceof WC_Product
+        ? $product_or_id
+        : wc_get_product(absint($product_or_id));
+
+    if (!$product) {
+        return false;
+    }
+
+    $product_ids = [$product->get_id()];
+    if ($product->is_type('variation') && $product->get_parent_id()) {
+        $product_ids[] = $product->get_parent_id();
+    }
+
+    foreach (array_unique(array_map('absint', $product_ids)) as $product_id) {
+        $terms = mulopimfwc_get_product_location_slugs($product_id);
+        if (!empty($terms) && in_array($location_slug, $terms, true)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Helper function to get cart item location for a specific product
 function mulopimfwc_get_cart_item_location($product_id, $variation_id = 0)
 {
@@ -426,6 +498,9 @@ if (!is_admin()) {
         }
 
         $location_slug = mulopimfwc_get_current_store_location();
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $price;
+        }
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id || !isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
@@ -453,6 +528,9 @@ if (!is_admin()) {
         }
 
         $location_slug = mulopimfwc_get_current_store_location();
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $price;
+        }
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id) {
@@ -495,6 +573,10 @@ if (!is_admin()) {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
         }
 
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $quantity;
+        }
+
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id) {
@@ -534,6 +616,10 @@ if (!is_admin()) {
         } else {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
         }
+
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $backorders;
+        }
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id) {
@@ -566,6 +652,10 @@ if (!is_admin()) {
             return $status;
         } else {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
+        }
+
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $status;
         }
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
@@ -634,6 +724,10 @@ if (!is_admin()) {
         } else {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
         }
+
+        if (!mulopimfwc_is_location_assigned_to_product($variation, $location_slug)) {
+            return $quantity;
+        }
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id) {
@@ -665,6 +759,10 @@ if (!is_admin()) {
             return $backorders;
         } else {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
+        }
+
+        if (!mulopimfwc_is_location_assigned_to_product($variation, $location_slug)) {
+            return $backorders;
         }
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
@@ -933,6 +1031,10 @@ if (!is_admin()) {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
         }
 
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $price;
+        }
+
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id) {
@@ -990,6 +1092,10 @@ if (!is_admin()) {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
         }
 
+        if (!mulopimfwc_is_location_assigned_to_product($variation, $location_slug)) {
+            return $price;
+        }
+
         $location_id = mulopimfwc_get_location_term_id($location_slug);
 
         if (!$location_id) {
@@ -1035,6 +1141,10 @@ if (!is_admin()) {
             return $prices;
         } else {
             $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
+        }
+
+        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+            return $prices;
         }
 
         $location_id = mulopimfwc_get_location_term_id($location_slug);
@@ -1234,6 +1344,10 @@ function mulopimfwc_display_location_specific_stock_info()
         return; // No specific location selected
     }
 
+    if (!$product || !mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+        return;
+    }
+
     // Get location term
     $location = get_term_by('slug', $location_slug, 'mulopimfwc_store_location');
     if (!$location) {
@@ -1316,6 +1430,10 @@ function mulopimfwc_display_location_specific_stock_info_loop()
         return; // No specific location selected
     }
 
+    if (!$product || !mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+        return;
+    }
+
     // Get location term
     $location = get_term_by('slug', $location_slug, 'mulopimfwc_store_location');
     if (!$location) {
@@ -1366,6 +1484,12 @@ function mulopimfwc_add_location_data_to_variations($variation_data, $product, $
     if (empty($location_slug) || $location_slug === 'all-products') {
         return $variation_data; // No specific location selected
     }
+
+    if (!mulopimfwc_is_location_assigned_to_product($variation, $location_slug)) {
+        unset($variation_data['location_data']);
+        return $variation_data;
+    }
+
     global $mulopimfwc_options;
     $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
     $terms = array_map('rawurldecode', wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
@@ -1420,6 +1544,10 @@ function mulopimfwc_display_location_stock_status_in_loop()
     $location_slug = mulopimfwc_get_current_store_location();
     if (empty($location_slug) || $location_slug === 'all-products') {
         return; // No specific location selected
+    }
+
+    if (!$product || !mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
+        return;
     }
 
     $terms = array_map('rawurldecode', wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));

@@ -120,6 +120,12 @@ function mulopimfwc_is_product_out_of_stock_for_location($product_id)
         return $product ? !$product->is_in_stock() : false;
     }
 
+    // If the selected location is no longer assigned, do not use location-specific stock/meta.
+    if (is_wp_error($terms) || !in_array($location_slug, $terms, true)) {
+        $product = wc_get_product($product_id);
+        return $product ? !$product->is_in_stock() : false;
+    }
+
     // Get location-specific stock
     $location_stock = get_post_meta($product_id, '_location_stock_' . $location->term_id, true);
     $location_backorders = get_post_meta($product_id, '_location_backorders_' . $location->term_id, true);

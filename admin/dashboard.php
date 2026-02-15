@@ -825,7 +825,7 @@ class MULOPIMFWC_Dashboard
     private function calculate_total_investment_efficiently()
     {
         // Use caching to prevent recalculation
-        $cache_key = 'mulopimfwc_total_investment';
+        $cache_key = 'mulopimfwc_total_investment_v3';
         $cached_value = get_transient($cache_key);
 
         if ($cached_value !== false) {
@@ -834,32 +834,50 @@ class MULOPIMFWC_Dashboard
 
         global $wpdb;
 
-        // FIXED: Use prepared statement for security
-        // Calculate investment based on _purchase_price and _purchase_quantity
-        $total_investment = $wpdb->get_var($wpdb->prepare("
-        SELECT COALESCE(SUM(
-            CAST(pm1.meta_value AS DECIMAL(10,2)) * 
-            COALESCE(CAST(pm2.meta_value AS SIGNED), 0)
-        ), 0) as total
-        FROM {$wpdb->postmeta} pm1
-        INNER JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
-        INNER JOIN {$wpdb->posts} p ON pm1.post_id = p.ID
-        WHERE pm1.meta_key = %s
-        AND pm2.meta_key = %s
-        AND p.post_type = %s
-        AND p.post_status = %s
-        AND pm1.meta_value != ''
-        AND pm1.meta_value > 0
-        AND pm2.meta_value != ''
-        AND pm2.meta_value > 0
-        AND pm1.post_id IN (
-            SELECT ID FROM {$wpdb->posts} 
-            WHERE post_type = %s 
-            AND post_status = %s
-        )
-        ", '_purchase_price', '_purchase_quantity', 'product', 'publish', 'product', 'publish'));
+        // Calculate investment as purchase_price * purchase_quantity.
+        // Include simple/external products and variable variations.
+        // Skip any row where either value is missing or <= 0.
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.ID,
+                    MAX(CASE WHEN pm.meta_key = %s THEN pm.meta_value END) AS purchase_price,
+                    MAX(CASE WHEN pm.meta_key = %s THEN pm.meta_value END) AS purchase_quantity
+             FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->postmeta} pm
+                ON pm.post_id = p.ID
+               AND pm.meta_key IN (%s, %s)
+             WHERE p.post_type IN (%s, %s)
+               AND p.post_status IN (%s, %s)
+             GROUP BY p.ID",
+            '_purchase_price',
+            '_purchase_quantity',
+            '_purchase_price',
+            '_purchase_quantity',
+            'product',
+            'product_variation',
+            'publish',
+            'private'
+        ));
 
-        $total_investment = floatval($total_investment);
+        $total_investment = 0.0;
+        if (!empty($rows)) {
+            foreach ($rows as $row) {
+                $price_raw = isset($row->purchase_price) ? $row->purchase_price : '';
+                $qty_raw = isset($row->purchase_quantity) ? $row->purchase_quantity : '';
+
+                if ($price_raw === '' || $qty_raw === '') {
+                    continue;
+                }
+
+                $price = (float) wc_format_decimal($price_raw);
+                $quantity = (float) wc_format_decimal($qty_raw);
+
+                if ($price <= 0 || $quantity <= 0) {
+                    continue;
+                }
+
+                $total_investment += ($price * $quantity);
+            }
+        }
 
         // Cache for 1 hour
         set_transient($cache_key, $total_investment, HOUR_IN_SECONDS);

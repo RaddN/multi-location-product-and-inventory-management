@@ -306,6 +306,53 @@ jQuery(document).ready(function ($) {
         }
     }
 
+    function normalizeManageStockValue(value) {
+        if (value === true || value === 1 || value === '1') {
+            return 'yes';
+        }
+        if (typeof value === 'string') {
+            var lowered = value.toLowerCase();
+            if (lowered === 'yes' || lowered === 'on' || lowered === 'true') {
+                return 'yes';
+            }
+        }
+        return 'no';
+    }
+
+    function isManageStockEnabled(value) {
+        return normalizeManageStockValue(value) === 'yes';
+    }
+
+    function getManageStockFieldEnabled(selector, fallbackEnabled) {
+        var $field = $('#manage-product-modal').find(selector).first();
+        if (!$field.length) {
+            return typeof fallbackEnabled === 'undefined' ? true : !!fallbackEnabled;
+        }
+        if ($field.is(':checkbox')) {
+            return $field.is(':checked');
+        }
+        return isManageStockEnabled($field.val());
+    }
+
+    function isVariationManageStockEnabled(variationId) {
+        return getManageStockFieldEnabled(
+            '[name="variations[' + variationId + '][default][manage_stock]"]',
+            true
+        );
+    }
+
+    function toggleSimpleManageStockRows(enabled) {
+        var $modal = $('#manage-product-modal');
+        $modal.find('.manage-stock-default-row').toggle(!!enabled);
+        $modal.find('.manage-stock-location-row').toggle(!!enabled);
+    }
+
+    function toggleVariationManageStockRows(variationId, enabled) {
+        var $modal = $('#manage-product-modal');
+        $modal.find('.variation-manage-stock-default-row-' + variationId).toggle(!!enabled);
+        $modal.find('.variation-manage-stock-location-row-' + variationId).toggle(!!enabled);
+    }
+
     function resetManageModalState(productData, allLocations, productId) {
         var assignedLocations = (productData.locations || []).map(function(loc) {
             return $.extend({}, loc);
@@ -787,6 +834,29 @@ jQuery(document).ready(function ($) {
                 }
             });
         });
+
+        // Variation-level manage stock toggle
+        $(document)
+            .off('change', '#manage-product-modal [name^="variations["][name$="[default][manage_stock]"]')
+            .on('change', '#manage-product-modal [name^="variations["][name$="[default][manage_stock]"]', function() {
+                var name = $(this).attr('name') || '';
+                var match = name.match(/variations\[(\d+)\]\[default\]\[manage_stock\]/);
+                if (!match) {
+                    return;
+                }
+                var variationId = match[1];
+                var isEnabled = $(this).is(':checkbox') ? $(this).is(':checked') : isManageStockEnabled($(this).val());
+                toggleVariationManageStockRows(variationId, isEnabled);
+            });
+
+        // Apply initial variation stock-management visibility
+        $('#manage-product-modal .variation-accordion').each(function() {
+            var variationId = $(this).data('variation-id');
+            if (!variationId) {
+                return;
+            }
+            toggleVariationManageStockRows(variationId, isVariationManageStockEnabled(variationId));
+        });
         
         // Setup validation
         setupManageProductValidation();
@@ -884,6 +954,7 @@ jQuery(document).ready(function ($) {
                 if ($tabsWrapper.length === 0) {
                     return; // Skip if variation tabs wrapper doesn't exist
                 }
+                var variationManageStockEnabled = isVariationManageStockEnabled(varId);
                 
                 var $tabsNav = $tabsWrapper.find('.variation-tabs-nav');
                 var $tabsContent = $tabsWrapper.find('.variation-tabs-content');
@@ -925,7 +996,7 @@ jQuery(document).ready(function ($) {
                                 regular_price: '',
                                 sale_price: '',
                                 backorders: 'off'
-                            }, currencySymbol) +
+                            }, currencySymbol, variationManageStockEnabled) +
                             '</div>';
                         
                         $tabsContent.append(tabPanelHtml);
@@ -1005,6 +1076,9 @@ jQuery(document).ready(function ($) {
             return assignedLocationIds.indexOf(parseInt(loc.id, 10)) === -1;
         });
         var hasAvailableLocations = availableLocations.length > 0;
+        var variationManageStockEnabled = isManageStockEnabled(
+            variation && variation.default ? variation.default.manage_stock : 'yes'
+        );
         
         htmlParts.push('<div class="variation-accordion ' + expandedClass + '" data-variation-id="' + variation.id + '">');
         htmlParts.push('<div class="variation-accordion-header" data-accordion-id="' + accordionId + '">');
@@ -1050,7 +1124,7 @@ jQuery(document).ready(function ($) {
             variation.locations.forEach(function(location) {
                 var locationTabId = 'location-' + variation.id + '-' + location.id;
                 htmlParts.push('<div class="variation-tab-panel" id="' + locationTabId + '">');
-                htmlParts.push(buildVariationLocationTab(variation.id, location, currencySymbol));
+                htmlParts.push(buildVariationLocationTab(variation.id, location, currencySymbol, variationManageStockEnabled));
                 htmlParts.push('</div>');
             });
         }
@@ -1066,9 +1140,18 @@ jQuery(document).ready(function ($) {
     // Build default tab content for variation
     function buildVariationDefaultTab(variation, currencySymbol) {
         var htmlParts = [];
+        var manageStockEnabled = isManageStockEnabled(
+            variation && variation.default ? variation.default.manage_stock : 'yes'
+        );
+        var stockRowStyle = manageStockEnabled ? '' : ' style="display:none;"';
         htmlParts.push('<form class="manage-product-form" data-section="variation" data-variation-id="' + variation.id + '">');
-        
+
         htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<label>Manage Stock:</label>');
+        htmlParts.push('<label><input type="checkbox" name="variations[' + variation.id + '][default][manage_stock]" value="yes"' + (manageStockEnabled ? ' checked' : '') + '> Enable</label>');
+        htmlParts.push('</div>');
+        
+        htmlParts.push('<div class="manage-form-row variation-manage-stock-default-row variation-manage-stock-default-row-' + variation.id + '"' + stockRowStyle + '>');
         htmlParts.push('<label>Stock Quantity:</label>');
         htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][stock_quantity]" value="' + (variation.default.stock_quantity || '') + '" min="0" step="1">');
         htmlParts.push('</div>');
@@ -1083,7 +1166,7 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][sale_price]" value="' + (variation.default.sale_price || '') + '" min="0" step="0.01">');
         htmlParts.push('</div>');
         
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row variation-manage-stock-default-row variation-manage-stock-default-row-' + variation.id + '"' + stockRowStyle + '>');
         htmlParts.push('<label>Backorders:</label>');
         htmlParts.push('<select name="variations[' + variation.id + '][default][backorders]">');
         htmlParts.push('<option value="no"' + (variation.default.backorders === 'no' ? ' selected' : '') + '>Do not allow</option>');
@@ -1096,17 +1179,24 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
         htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_price]" value="' + (variation.default.purchase_price || '') + '" min="0" step="0.01">');
         htmlParts.push('</div>');
+
+        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<label>Purchase Quantity:</label>');
+        htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_quantity]" value="' + (variation.default.purchase_quantity || '') + '" min="0" step="1">');
+        htmlParts.push('</div>');
         
         htmlParts.push('</form>');
         return htmlParts.join('');
     }
     
     // Build location tab content for variation
-    function buildVariationLocationTab(variationId, location, currencySymbol) {
+    function buildVariationLocationTab(variationId, location, currencySymbol, manageStockEnabled) {
         var htmlParts = [];
+        var isStockManaged = typeof manageStockEnabled === 'undefined' ? true : !!manageStockEnabled;
+        var stockRowStyle = isStockManaged ? '' : ' style="display:none;"';
         htmlParts.push('<form class="manage-product-form" data-section="variation-location" data-variation-id="' + variationId + '" data-location-id="' + location.id + '">');
         
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row variation-manage-stock-location-row variation-manage-stock-location-row-' + variationId + '"' + stockRowStyle + '>');
         htmlParts.push('<label>Stock Quantity:</label>');
         htmlParts.push('<input type="number" name="variations[' + variationId + '][locations][' + location.id + '][stock]" value="' + (location.stock || '') + '" min="0" step="1">');
         htmlParts.push('</div>');
@@ -1121,7 +1211,7 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<input type="number" name="variations[' + variationId + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
         htmlParts.push('</div>');
         
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row variation-manage-stock-location-row variation-manage-stock-location-row-' + variationId + '"' + stockRowStyle + '>');
         htmlParts.push('<label>Backorders:</label>');
         htmlParts.push('<select name="variations[' + variationId + '][locations][' + location.id + '][backorders]">');
         htmlParts.push('<option value="off"' + (location.backorders === 'off' ? ' selected' : '') + '>Do not allow</option>');
@@ -1253,6 +1343,25 @@ jQuery(document).ready(function ($) {
             }
         });
 
+        // Simple/external default manage stock toggle
+        $('#manage-product-modal')
+            .off('change', '[name="default[manage_stock]"]')
+            .on('change', '[name="default[manage_stock]"]', function() {
+                var isEnabled = $(this).is(':checkbox') ? $(this).is(':checked') : isManageStockEnabled($(this).val());
+                toggleSimpleManageStockRows(isEnabled);
+            });
+
+        // Apply initial visibility of stock-dependent rows
+        var modalProductType = data.product_type || data.type || '';
+        var modalIsExternal = modalProductType === 'external' || modalProductType === 'affiliate';
+        var initialManageStockEnabled = modalIsExternal
+            ? false
+            : getManageStockFieldEnabled(
+                '[name="default[manage_stock]"]',
+                isManageStockEnabled(data.default ? data.default.manage_stock : 'yes')
+            );
+        toggleSimpleManageStockRows(initialManageStockEnabled);
+
         // Setup validation
         setupManageProductValidation();
     }
@@ -1263,14 +1372,24 @@ jQuery(document).ready(function ($) {
         var productType = data.product_type || data.type || '';
         var isGrouped = productType === 'grouped';
         var isExternal = productType === 'external' || productType === 'affiliate';
+        var isVariable = productType === 'variable';
+        var manageStockEnabled = !isExternal && isManageStockEnabled(data.default ? data.default.manage_stock : 'yes');
+        var stockRowStyle = manageStockEnabled ? '' : ' style="display:none;"';
         
         htmlParts.push('<div class="manage-tab-panel active" data-tab="' + tabId + '">');
         htmlParts.push('<form class="manage-product-form" data-section="default">');
         htmlParts.push('<div class="manage-section-title">Default Settings</div>');
+
+        if (!isGrouped && !isExternal) {
+            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<label>Manage Stock:</label>');
+            htmlParts.push('<label><input type="checkbox" name="default[manage_stock]" value="yes"' + (manageStockEnabled ? ' checked' : '') + '> Enable</label>');
+            htmlParts.push('</div>');
+        }
         
         // Stock Quantity - not for grouped or external products
         if (!isGrouped && !isExternal) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row manage-stock-default-row"' + stockRowStyle + '>');
             htmlParts.push('<label>Stock Quantity:</label>');
             htmlParts.push('<input type="number" name="default[stock_quantity]" value="' + (data.default.stock_quantity || '') + '" min="0" step="1">');
             htmlParts.push('</div>');
@@ -1294,7 +1413,7 @@ jQuery(document).ready(function ($) {
         
         // Backorders - not for grouped or external products
         if (!isGrouped && !isExternal) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row manage-stock-default-row"' + stockRowStyle + '>');
             htmlParts.push('<label>Backorders:</label>');
             htmlParts.push('<select name="default[backorders]">');
             htmlParts.push('<option value="no"' + (data.default.backorders === 'no' ? ' selected' : '') + '>Do not allow</option>');
@@ -1305,15 +1424,15 @@ jQuery(document).ready(function ($) {
         }
         
         // Purchase Price - not for grouped products
-        if (!isGrouped) {
+        if (!isGrouped && !isVariable) {
             htmlParts.push('<div class="manage-form-row">');
             htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
             htmlParts.push('<input type="number" name="default[purchase_price]" value="' + (data.default.purchase_price || '') + '" min="0" step="0.01">');
             htmlParts.push('</div>');
         }
         
-        // Purchase Quantity - not for grouped or external products
-        if (!isGrouped && !isExternal) {
+        // Purchase Quantity - not for grouped or variable products
+        if (!isGrouped && !isVariable) {
             htmlParts.push('<div class="manage-form-row">');
             htmlParts.push('<label>Purchase Quantity:</label>');
             htmlParts.push('<input type="number" name="default[purchase_quantity]" value="' + (data.default.purchase_quantity || '') + '" min="0" step="1">');
@@ -1331,6 +1450,11 @@ jQuery(document).ready(function ($) {
         var productType = data.product_type || data.type || '';
         var isGrouped = productType === 'grouped';
         var isExternal = productType === 'external' || productType === 'affiliate';
+        var manageStockEnabled = !isExternal && getManageStockFieldEnabled(
+            '[name="default[manage_stock]"]',
+            !isExternal && isManageStockEnabled(data.default ? data.default.manage_stock : 'yes')
+        );
+        var stockRowStyle = manageStockEnabled ? '' : ' style="display:none;"';
         
         htmlParts.push('<div class="manage-tab-panel" data-tab="' + tabId + '">');
         htmlParts.push('<form class="manage-product-form" data-section="location" data-location-id="' + location.id + '">');
@@ -1338,7 +1462,7 @@ jQuery(document).ready(function ($) {
         
         // Stock Quantity - not for grouped or external products
         if (!isGrouped && !isExternal) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row manage-stock-location-row"' + stockRowStyle + '>');
             htmlParts.push('<label>Stock Quantity:</label>');
             htmlParts.push('<input type="number" name="locations[' + location.id + '][stock]" value="' + (location.stock || '') + '" min="0" step="1">');
             htmlParts.push('</div>');
@@ -1362,7 +1486,7 @@ jQuery(document).ready(function ($) {
         
         // Backorders - not for grouped or external products
         if (!isGrouped && !isExternal) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row manage-stock-location-row"' + stockRowStyle + '>');
             htmlParts.push('<label>Backorders:</label>');
             htmlParts.push('<select name="locations[' + location.id + '][backorders]">');
             htmlParts.push('<option value="off"' + (location.backorders === 'off' ? ' selected' : '') + '>Do not allow</option>');
@@ -1454,6 +1578,10 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<div class="manage-form-row">');
         htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
         htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_price]" value="' + (variation.default.purchase_price || '') + '" min="0" step="0.01">');
+        htmlParts.push('</div>');
+        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<label>Purchase Quantity:</label>');
+        htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_quantity]" value="' + (variation.default.purchase_quantity || '') + '" min="0" step="1">');
         htmlParts.push('</div>');
         htmlParts.push('</div>');
 
@@ -1595,6 +1723,9 @@ jQuery(document).ready(function ($) {
         }
         var isGrouped = productType === 'grouped';
         var isExternal = productType === 'external' || productType === 'affiliate';
+        var defaultManageStockEnabled = isExternal
+            ? false
+            : getManageStockFieldEnabled('[name="default[manage_stock]"]', true);
 
         var value = parseFloat($field.val()) || 0;
         var isValid = true;
@@ -1622,10 +1753,10 @@ jQuery(document).ready(function ($) {
         if ($purchasePriceField.length && !isGrouped) {
             defaultPurchasePrice = parseFloat($purchasePriceField.val()) || 0;
         }
-        if ($stockField.length && !isGrouped && !isExternal) {
+        if ($stockField.length && !isGrouped && defaultManageStockEnabled) {
             defaultStock = parseFloat($stockField.val()) || 0;
         }
-        if ($purchaseQtyField.length && !isGrouped && !isExternal) {
+        if ($purchaseQtyField.length && !isGrouped) {
             defaultPurchaseQty = parseFloat($purchaseQtyField.val()) || 0;
         }
 
@@ -1655,7 +1786,7 @@ jQuery(document).ready(function ($) {
             }
         }
 
-        if (fieldName.indexOf('default[stock_quantity]') !== -1 && !isGrouped && !isExternal) {
+        if (fieldName.indexOf('default[stock_quantity]') !== -1 && !isGrouped && defaultManageStockEnabled) {
             if (defaultPurchaseQty > 0 && value > defaultPurchaseQty) {
                 isValid = false;
                 errorMessage = 'Stock quantity cannot be greater than purchase quantity (' + defaultPurchaseQty + ')';
@@ -1693,6 +1824,12 @@ jQuery(document).ready(function ($) {
                 var varDefaultRegularPrice = parseFloat($('#manage-product-modal input[name="variations[' + varId + '][default][regular_price]"]').val()) || 0;
                 var varDefaultSalePrice = parseFloat($('#manage-product-modal input[name="variations[' + varId + '][default][sale_price]"]').val()) || 0;
                 var varDefaultPurchasePrice = parseFloat($('#manage-product-modal input[name="variations[' + varId + '][default][purchase_price]"]').val()) || 0;
+                var varDefaultStock = parseFloat($('#manage-product-modal input[name="variations[' + varId + '][default][stock_quantity]"]').val()) || 0;
+                var varDefaultPurchaseQty = parseFloat($('#manage-product-modal input[name="variations[' + varId + '][default][purchase_quantity]"]').val()) || 0;
+                var varManageStockEnabled = getManageStockFieldEnabled(
+                    '[name="variations[' + varId + '][default][manage_stock]"]',
+                    true
+                );
 
                 if (varFieldType === 'regular_price' && varDefaultPurchasePrice > 0 && value < varDefaultPurchasePrice) {
                     isValid = false;
@@ -1701,6 +1838,14 @@ jQuery(document).ready(function ($) {
                 if (varFieldType === 'sale_price' && varDefaultRegularPrice > 0 && value >= varDefaultRegularPrice) {
                     isValid = false;
                     errorMessage = 'Sale price must be less than regular price (' + varDefaultRegularPrice + ')';
+                }
+                if (varFieldType === 'stock_quantity' && varManageStockEnabled && varDefaultPurchaseQty > 0 && value > varDefaultPurchaseQty) {
+                    isValid = false;
+                    errorMessage = 'Stock quantity cannot be greater than purchase quantity (' + varDefaultPurchaseQty + ')';
+                }
+                if (varFieldType === 'purchase_quantity' && varManageStockEnabled && varDefaultStock > 0 && value < varDefaultStock) {
+                    isValid = false;
+                    errorMessage = 'Purchase quantity cannot be less than stock quantity (' + varDefaultStock + ')';
                 }
             }
         }
@@ -1830,6 +1975,9 @@ jQuery(document).ready(function ($) {
         var isGrouped = productType === 'grouped';
         var isVariable = productType === 'variable';
         var isExternal = productType === 'external' || productType === 'affiliate';
+        var defaultManageStockEnabled = isExternal
+            ? false
+            : getManageStockFieldEnabled('[name="default[manage_stock]"]', true);
 
         // Get default values (only if fields exist)
         var defaultRegularPrice = 0;
@@ -1847,12 +1995,12 @@ jQuery(document).ready(function ($) {
         if (!$('#manage-product-modal input[name="default[purchase_price]"]').length || !isGrouped) {
             defaultPurchasePrice = parseFloat($('#manage-product-modal input[name="default[purchase_price]"]').val()) || 0;
         }
-        if (!$('#manage-product-modal input[name="default[stock_quantity]"]').length || isGrouped || isExternal) {
+        if (!$('#manage-product-modal input[name="default[stock_quantity]"]').length || isGrouped || !defaultManageStockEnabled) {
             defaultStock = 0;
         } else {
             defaultStock = parseFloat($('#manage-product-modal input[name="default[stock_quantity]"]').val()) || 0;
         }
-        if (!$('#manage-product-modal input[name="default[purchase_quantity]"]').length || isGrouped || isExternal) {
+        if (!$('#manage-product-modal input[name="default[purchase_quantity]"]').length || isGrouped) {
             defaultPurchaseQty = 0;
         } else {
             defaultPurchaseQty = parseFloat($('#manage-product-modal input[name="default[purchase_quantity]"]').val()) || 0;
@@ -1893,8 +2041,8 @@ jQuery(document).ready(function ($) {
                 }
             }
 
-            // Validation 4: Default quantity can't be greater than purchase quantity (skip for grouped/external products)
-            if (!isGrouped && !isExternal && defaultPurchaseQty > 0 && defaultStock > defaultPurchaseQty) {
+            // Validation 4: Default quantity can't be greater than purchase quantity (when stock management is enabled)
+            if (!isGrouped && defaultManageStockEnabled && defaultPurchaseQty > 0 && defaultStock > defaultPurchaseQty) {
                 var $field = $('#manage-product-modal input[name="default[stock_quantity]"]');
                 if ($field.length) {
                     $field.addClass('manage-error');
@@ -1904,8 +2052,8 @@ jQuery(document).ready(function ($) {
                 }
             }
 
-            // Validation 5: Sum of all location stock can't be greater than default quantity (skip for grouped/external products)
-            if (!isGrouped && !isExternal) {
+            // Validation 5: Sum of all location stock can't be greater than default quantity (when stock management is enabled)
+            if (!isGrouped && defaultManageStockEnabled) {
                 var totalLocationStock = 0;
             $('#manage-product-modal input[name*="locations["][name*="[stock]"]').each(function() {
                 var name = $(this).attr('name');
@@ -2017,6 +2165,13 @@ jQuery(document).ready(function ($) {
             var varMatch = $(this).attr('name').match(/variations\[(\d+)\]/);
             if (varMatch) {
                 var varId = varMatch[1];
+                var varManageStockEnabled = getManageStockFieldEnabled(
+                    '[name="variations[' + varId + '][default][manage_stock]"]',
+                    true
+                );
+                if (!varManageStockEnabled) {
+                    return;
+                }
                 var varDefaultStock = parseFloat($(this).val()) || 0;
                 var totalVarLocationStock = 0;
 
@@ -2231,7 +2386,9 @@ jQuery(document).ready(function ($) {
             $(this).find('input, select').each(function() {
                 var $field = $(this);
                 var name = $field.attr('name');
-                var value = $field.val();
+                var value = $field.is(':checkbox')
+                    ? ($field.is(':checked') ? 'yes' : 'no')
+                    : $field.val();
                 
                 // Include all fields (even empty) for variation locations to track assignment
                 var isVariationLocation = name && name.indexOf('variations[') === 0 && name.indexOf('[locations][') !== -1;
@@ -2362,6 +2519,8 @@ jQuery(document).ready(function ($) {
 
         htmlParts.push('<div class="quick-edit-body">');
         htmlParts.push('<form id="quick-edit-form">');
+        var quickEditProductType = data.product_type || data.type || '';
+        var quickEditIsVariable = quickEditProductType === 'variable';
 
         // Default section
         htmlParts.push('<div class="quick-edit-section">');
@@ -2386,14 +2545,16 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<option value="yes"' + (data.default.backorders === 'yes' ? ' selected' : '') + '>Allow</option>');
         htmlParts.push('</select>');
         htmlParts.push('</div>');
-        htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
-        htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
-        htmlParts.push('<input type="number" name="default[purchase_price]" value="' + (data.default.purchase_price || '') + '" min="0" step="0.01">');
-        htmlParts.push('</div>');
-        htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
-        htmlParts.push('<label>Purchase Quantity:</label>');
-        htmlParts.push('<input type="number" name="default[purchase_quantity]" value="' + (data.default.purchase_quantity || '') + '" min="0" step="1">');
-        htmlParts.push('</div>');
+        if (!quickEditIsVariable) {
+            htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+            htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
+            htmlParts.push('<input type="number" name="default[purchase_price]" value="' + (data.default.purchase_price || '') + '" min="0" step="0.01">');
+            htmlParts.push('</div>');
+            htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+            htmlParts.push('<label>Purchase Quantity:</label>');
+            htmlParts.push('<input type="number" name="default[purchase_quantity]" value="' + (data.default.purchase_quantity || '') + '" min="0" step="1">');
+            htmlParts.push('</div>');
+        }
         htmlParts.push('</div>');
 
         // Location sections
@@ -2429,7 +2590,6 @@ jQuery(document).ready(function ($) {
         }
 
         // Variations section for variable products
-        var quickEditProductType = data.product_type || data.type || '';
         if (quickEditProductType === 'variable' && data.variations && data.variations.length > 0) {
             htmlParts.push('<div class="quick-edit-section">');
             htmlParts.push('<h3>Variations</h3>');
@@ -2464,6 +2624,10 @@ jQuery(document).ready(function ($) {
                 htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
                 htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
                 htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_price]" value="' + (variation.default.purchase_price || '') + '" min="0" step="0.01">');
+                htmlParts.push('</div>');
+                htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+                htmlParts.push('<label>Purchase Quantity:</label>');
+                htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_quantity]" value="' + (variation.default.purchase_quantity || '') + '" min="0" step="1">');
                 htmlParts.push('</div>');
                 htmlParts.push('</div>');
 
@@ -2641,6 +2805,8 @@ jQuery(document).ready(function ($) {
                 var varDefaultRegularPrice = parseFloat($('input[name="variations[' + varMatch[1] + '][default][regular_price]"]').val()) || 0;
                 var varDefaultSalePrice = parseFloat($('input[name="variations[' + varMatch[1] + '][default][sale_price]"]').val()) || 0;
                 var varDefaultPurchasePrice = parseFloat($('input[name="variations[' + varMatch[1] + '][default][purchase_price]"]').val()) || 0;
+                var varDefaultStock = parseFloat($('input[name="variations[' + varMatch[1] + '][default][stock_quantity]"]').val()) || 0;
+                var varDefaultPurchaseQty = parseFloat($('input[name="variations[' + varMatch[1] + '][default][purchase_quantity]"]').val()) || 0;
 
                 if (varFieldType === 'regular_price' && varDefaultPurchasePrice > 0 && value < varDefaultPurchasePrice) {
                     isValid = false;
@@ -2649,6 +2815,14 @@ jQuery(document).ready(function ($) {
                 if (varFieldType === 'sale_price' && varDefaultRegularPrice > 0 && value >= varDefaultRegularPrice) {
                     isValid = false;
                     errorMessage = 'Sale price must be less than regular price (' + varDefaultRegularPrice + ')';
+                }
+                if (varFieldType === 'stock_quantity' && varDefaultPurchaseQty > 0 && value > varDefaultPurchaseQty) {
+                    isValid = false;
+                    errorMessage = 'Stock quantity cannot be greater than purchase quantity (' + varDefaultPurchaseQty + ')';
+                }
+                if (varFieldType === 'purchase_quantity' && varDefaultStock > 0 && value < varDefaultStock) {
+                    isValid = false;
+                    errorMessage = 'Purchase quantity cannot be less than stock quantity (' + varDefaultStock + ')';
                 }
             }
         }
@@ -3500,6 +3674,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             this.initialized = true;
             this.bindEvents();
+            this.togglePurchaseFieldsVisibility();
             NotificationSystem.init();
         },
 
@@ -3551,6 +3726,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     self.checkManageStock();
                 }
             });
+
+            // Keep purchase fields visibility in sync with selected product type
+            $(document).on('change', '#product-type', function () {
+                self.togglePurchaseFieldsVisibility();
+            });
+        },
+
+        togglePurchaseFieldsVisibility() {
+            const productType = $('#product-type').val();
+            const $purchaseFields = $('p._purchase_price_field, p._purchase_quantity_field');
+
+            if (!$purchaseFields.length) {
+                return;
+            }
+
+            if (productType === 'simple' || productType === 'external' || productType === 'affiliate') {
+                $purchaseFields.show();
+            } else {
+                $purchaseFields.hide();
+            }
         },
 
         validateAll() {

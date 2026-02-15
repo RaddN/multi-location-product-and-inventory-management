@@ -1163,6 +1163,13 @@ if (!function_exists('mulopimfwc_get_values')) {
             add_action('update_option_mulopimfwc_display_options', [__CLASS__, 'clear_display_options_cache']);
             add_action('add_option_mulopimfwc_display_options', [__CLASS__, 'clear_display_options_cache']);
             add_action('delete_option_mulopimfwc_display_options', [__CLASS__, 'clear_display_options_cache']);
+            add_action('save_post_product', [$this, 'cymulopimfwc_invalidate_dashboard_cache'], 10, 3);
+            add_action('save_post_product_variation', [$this, 'cymulopimfwc_invalidate_dashboard_cache'], 10, 3);
+            add_action('deleted_post', [$this, 'cymulopimfwc_invalidate_dashboard_cache_by_post'], 10, 1);
+            add_action('before_delete_post', [$this, 'cymulopimfwc_invalidate_dashboard_cache_by_post'], 10, 1);
+            add_action('trashed_post', [$this, 'cymulopimfwc_invalidate_dashboard_cache_by_post'], 10, 1);
+            add_action('untrashed_post', [$this, 'cymulopimfwc_invalidate_dashboard_cache_by_post'], 10, 1);
+            add_action('set_object_terms', [$this, 'cymulopimfwc_invalidate_dashboard_cache_on_term_change'], 10, 6);
             add_action('pre_get_posts', [$this, 'filter_products_by_location']);
             add_filter('posts_clauses', [$this, 'filter_products_by_location_clauses'], 10, 2);
             add_filter('woocommerce_shortcode_products_query', [$this, 'filter_shortcode_products']);
@@ -1232,6 +1239,70 @@ if (!function_exists('mulopimfwc_get_values')) {
         public function clear_cart_cache()
         {
             $this->cart_items_cache = null;
+        }
+
+        /**
+         * Clear dashboard/plugin caches when product or variation posts are changed.
+         *
+         * @param int     $post_id Post ID.
+         * @param WP_Post $post    Post object.
+         * @param bool    $update  Whether this is an existing post being updated.
+         */
+        public function cymulopimfwc_invalidate_dashboard_cache($post_id, $post = null, $update = false)
+        {
+            if (!$post_id || wp_is_post_revision($post_id)) {
+                return;
+            }
+
+            $post_type = get_post_type($post_id);
+            if (!in_array($post_type, ['product', 'product_variation'], true)) {
+                return;
+            }
+
+            mulopimfwc_clear_plugin_caches('dashboard');
+        }
+
+        /**
+         * Clear dashboard/plugin caches when a post is deleted/trashed/untrashed.
+         *
+         * @param int $post_id Post ID.
+         */
+        public function cymulopimfwc_invalidate_dashboard_cache_by_post($post_id)
+        {
+            if (!$post_id) {
+                return;
+            }
+
+            $post_type = get_post_type($post_id);
+            if (!in_array($post_type, ['product', 'product_variation'], true)) {
+                return;
+            }
+
+            mulopimfwc_clear_plugin_caches('dashboard');
+        }
+
+        /**
+         * Clear dashboard/plugin caches when product location term assignments change.
+         *
+         * @param int    $object_id  Object ID.
+         * @param array  $terms      Term slugs or IDs.
+         * @param array  $tt_ids     Term taxonomy IDs.
+         * @param string $taxonomy   Taxonomy slug.
+         * @param bool   $append     Whether terms are appended.
+         * @param array  $old_tt_ids Previous term taxonomy IDs.
+         */
+        public function cymulopimfwc_invalidate_dashboard_cache_on_term_change($object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids)
+        {
+            if ($taxonomy !== 'mulopimfwc_store_location') {
+                return;
+            }
+
+            $post_type = get_post_type((int) $object_id);
+            if (!in_array($post_type, ['product', 'product_variation'], true)) {
+                return;
+            }
+
+            mulopimfwc_clear_plugin_caches('dashboard');
         }
 
 
@@ -1368,6 +1439,7 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             // Set product locations
             wp_set_object_terms($product_id, $location_ids, 'mulopimfwc_store_location');
+            mulopimfwc_clear_plugin_caches('dashboard');
 
             wp_send_json_success([
                 'message' => __('Product locations saved successfully.', 'multi-location-product-and-inventory-management'),
@@ -1428,6 +1500,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 $message = __('Location removed from product successfully.', 'multi-location-product-and-inventory-management');
             }
 
+            mulopimfwc_clear_plugin_caches('dashboard');
             wp_send_json_success(['message' => $message]);
         }
 
@@ -1468,6 +1541,7 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             // Get default product data
             $data['default'] = [
+                'manage_stock' => $product->get_manage_stock() ? 'yes' : 'no',
                 'stock_quantity' => $product->get_stock_quantity(),
                 'regular_price' => $product->get_regular_price(),
                 'sale_price' => $product->get_sale_price(),
@@ -1541,7 +1615,7 @@ if (!function_exists('mulopimfwc_get_values')) {
 
                     // Batch load all variation meta at once
                     global $wpdb;
-                    $variation_meta_keys = ['_stock', '_regular_price', '_sale_price', '_backorders', '_purchase_price'];
+                    $variation_meta_keys = ['_stock', '_regular_price', '_sale_price', '_backorders', '_purchase_price', '_purchase_quantity'];
                     foreach ($loc_ids_for_variations as $loc_id) {
                         $variation_meta_keys[] = '_location_stock_' . $loc_id;
                         $variation_meta_keys[] = '_location_regular_price_' . $loc_id;
@@ -1591,11 +1665,13 @@ if (!function_exists('mulopimfwc_get_values')) {
                             'id' => $variation_id,
                             'attributes' => $attributes,
                             'default' => [
+                                'manage_stock' => $variation->get_manage_stock() ? 'yes' : 'no',
                                 'stock_quantity' => isset($meta['_stock']) ? $meta['_stock'] : $variation->get_stock_quantity(),
                                 'regular_price' => isset($meta['_regular_price']) ? $meta['_regular_price'] : $variation->get_regular_price(),
                                 'sale_price' => isset($meta['_sale_price']) ? $meta['_sale_price'] : $variation->get_sale_price(),
                                 'backorders' => isset($meta['_backorders']) ? $meta['_backorders'] : $variation->get_backorders(),
                                 'purchase_price' => isset($meta['_purchase_price']) ? $meta['_purchase_price'] : '',
+                                'purchase_quantity' => isset($meta['_purchase_quantity']) ? $meta['_purchase_quantity'] : '',
                             ],
                             'locations' => [],
                         ];
@@ -1649,8 +1725,30 @@ if (!function_exists('mulopimfwc_get_values')) {
             // Save default product data
             if (isset($_POST['default'])) {
                 $default = $_POST['default'];
+                $product_type = $product->get_type();
+                $is_variable_parent = $product_type === 'variable';
+                $is_external_product = in_array($product_type, ['external', 'affiliate'], true);
+                $manage_stock_enabled = null;
+                if ($is_external_product) {
+                    // External/Affiliate products do not support stock management.
+                    $manage_stock_enabled = false;
+                    $product->set_manage_stock(false);
+                } elseif (isset($default['manage_stock'])) {
+                    $manage_stock_enabled = in_array(
+                        sanitize_text_field($default['manage_stock']),
+                        ['yes', 'on', '1', 'true'],
+                        true
+                    );
+                    $product->set_manage_stock($manage_stock_enabled);
+                }
                 if (isset($default['stock_quantity'])) {
-                    $product->set_stock_quantity(intval($default['stock_quantity']));
+                    $should_update_stock_quantity = $manage_stock_enabled;
+                    if ($should_update_stock_quantity === null) {
+                        $should_update_stock_quantity = $product->get_manage_stock();
+                    }
+                    if ($should_update_stock_quantity) {
+                        $product->set_stock_quantity(intval($default['stock_quantity']));
+                    }
                 }
                 if (isset($default['regular_price'])) {
                     $product->set_regular_price(wc_format_decimal($default['regular_price']));
@@ -1659,12 +1757,18 @@ if (!function_exists('mulopimfwc_get_values')) {
                     $product->set_sale_price(wc_format_decimal($default['sale_price']));
                 }
                 if (isset($default['backorders'])) {
-                    $product->set_backorders(sanitize_text_field($default['backorders']));
+                    $should_update_backorders = $manage_stock_enabled;
+                    if ($should_update_backorders === null) {
+                        $should_update_backorders = $product->get_manage_stock();
+                    }
+                    if ($should_update_backorders) {
+                        $product->set_backorders(sanitize_text_field($default['backorders']));
+                    }
                 }
-                if (isset($default['purchase_price'])) {
+                if (!$is_variable_parent && isset($default['purchase_price'])) {
                     update_post_meta($product_id, '_purchase_price', wc_format_decimal($default['purchase_price']));
                 }
-                if (isset($default['purchase_quantity'])) {
+                if (!$is_variable_parent && isset($default['purchase_quantity'])) {
                     update_post_meta($product_id, '_purchase_quantity', intval($default['purchase_quantity']));
                 }
                 $product->save();
@@ -1672,17 +1776,25 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             // Save location data
             if (isset($_POST['locations']) && is_array($_POST['locations'])) {
+                $product_manage_stock = (bool) $product->get_manage_stock();
                 foreach ($_POST['locations'] as $location_data) {
                     $location_id = isset($location_data['id']) ? intval($location_data['id']) : 0;
                     if (!$location_id) {
                         continue;
                     }
 
-                    $old_stock = get_post_meta($product_id, '_location_stock_' . $location_id, true);
+                    if (!$product_manage_stock) {
+                        delete_post_meta($product_id, '_location_stock_' . $location_id);
+                        delete_post_meta($product_id, '_location_backorders_' . $location_id);
+                    }
 
                     if (isset($location_data['stock'])) {
-                        $new_stock = intval($location_data['stock']);
-                        update_post_meta($product_id, '_location_stock_' . $location_id, $new_stock);
+                        if ($product_manage_stock) {
+                            $new_stock = intval($location_data['stock']);
+                            update_post_meta($product_id, '_location_stock_' . $location_id, $new_stock);
+                        } else {
+                            delete_post_meta($product_id, '_location_stock_' . $location_id);
+                        }
                     }
                     if (isset($location_data['regular_price'])) {
                         update_post_meta($product_id, '_location_regular_price_' . $location_id, wc_format_decimal($location_data['regular_price']));
@@ -1691,7 +1803,11 @@ if (!function_exists('mulopimfwc_get_values')) {
                         update_post_meta($product_id, '_location_sale_price_' . $location_id, wc_format_decimal($location_data['sale_price']));
                     }
                     if (isset($location_data['backorders'])) {
-                        update_post_meta($product_id, '_location_backorders_' . $location_id, sanitize_text_field($location_data['backorders']));
+                        if ($product_manage_stock) {
+                            update_post_meta($product_id, '_location_backorders_' . $location_id, sanitize_text_field($location_data['backorders']));
+                        } else {
+                            delete_post_meta($product_id, '_location_backorders_' . $location_id);
+                        }
                     }
                 }
             }
@@ -1740,8 +1856,23 @@ if (!function_exists('mulopimfwc_get_values')) {
                     // Save default variation data
                     if (isset($variation_data['default'])) {
                         $default = $variation_data['default'];
+                        $variation_manage_stock_enabled = null;
+                        if (isset($default['manage_stock'])) {
+                            $variation_manage_stock_enabled = in_array(
+                                sanitize_text_field($default['manage_stock']),
+                                ['yes', 'on', '1', 'true'],
+                                true
+                            );
+                            $variation->set_manage_stock($variation_manage_stock_enabled);
+                        }
                         if (isset($default['stock_quantity'])) {
-                            $variation->set_stock_quantity(intval($default['stock_quantity']));
+                            $should_update_variation_stock = $variation_manage_stock_enabled;
+                            if ($should_update_variation_stock === null) {
+                                $should_update_variation_stock = $variation->get_manage_stock();
+                            }
+                            if ($should_update_variation_stock) {
+                                $variation->set_stock_quantity(intval($default['stock_quantity']));
+                            }
                         }
                         if (isset($default['regular_price'])) {
                             $variation->set_regular_price(wc_format_decimal($default['regular_price']));
@@ -1750,24 +1881,43 @@ if (!function_exists('mulopimfwc_get_values')) {
                             $variation->set_sale_price(wc_format_decimal($default['sale_price']));
                         }
                         if (isset($default['backorders'])) {
-                            $variation->set_backorders(sanitize_text_field($default['backorders']));
+                            $should_update_variation_backorders = $variation_manage_stock_enabled;
+                            if ($should_update_variation_backorders === null) {
+                                $should_update_variation_backorders = $variation->get_manage_stock();
+                            }
+                            if ($should_update_variation_backorders) {
+                                $variation->set_backorders(sanitize_text_field($default['backorders']));
+                            }
                         }
                         if (isset($default['purchase_price'])) {
                             update_post_meta($variation_id, '_purchase_price', wc_format_decimal($default['purchase_price']));
+                        }
+                        if (isset($default['purchase_quantity'])) {
+                            update_post_meta($variation_id, '_purchase_quantity', intval($default['purchase_quantity']));
                         }
                         $variation->save();
                     }
 
                     // Save location data for variation
                     if (isset($variation_data['locations']) && is_array($variation_data['locations'])) {
+                        $variation_manage_stock = (bool) $variation->get_manage_stock();
                         foreach ($variation_data['locations'] as $location_data) {
                             $location_id = isset($location_data['id']) ? intval($location_data['id']) : 0;
                             if (!$location_id) {
                                 continue;
                             }
 
+                            if (!$variation_manage_stock) {
+                                delete_post_meta($variation_id, '_location_stock_' . $location_id);
+                                delete_post_meta($variation_id, '_location_backorders_' . $location_id);
+                            }
+
                             if (isset($location_data['stock'])) {
-                                update_post_meta($variation_id, '_location_stock_' . $location_id, intval($location_data['stock']));
+                                if ($variation_manage_stock) {
+                                    update_post_meta($variation_id, '_location_stock_' . $location_id, intval($location_data['stock']));
+                                } else {
+                                    delete_post_meta($variation_id, '_location_stock_' . $location_id);
+                                }
                             }
                             if (isset($location_data['regular_price'])) {
                                 update_post_meta($variation_id, '_location_regular_price_' . $location_id, wc_format_decimal($location_data['regular_price']));
@@ -1776,13 +1926,18 @@ if (!function_exists('mulopimfwc_get_values')) {
                                 update_post_meta($variation_id, '_location_sale_price_' . $location_id, wc_format_decimal($location_data['sale_price']));
                             }
                             if (isset($location_data['backorders'])) {
-                                update_post_meta($variation_id, '_location_backorders_' . $location_id, sanitize_text_field($location_data['backorders']));
+                                if ($variation_manage_stock) {
+                                    update_post_meta($variation_id, '_location_backorders_' . $location_id, sanitize_text_field($location_data['backorders']));
+                                } else {
+                                    delete_post_meta($variation_id, '_location_backorders_' . $location_id);
+                                }
                             }
                         }
                     }
                 }
             }
 
+            mulopimfwc_clear_plugin_caches('dashboard');
             wp_send_json_success(['message' => __('Product data saved successfully.', 'multi-location-product-and-inventory-management')]);
         }
 
@@ -1829,6 +1984,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 }
             }
 
+            mulopimfwc_clear_plugin_caches('dashboard');
             wp_send_json_success(['message' => __('Location removed successfully.', 'multi-location-product-and-inventory-management')]);
         }
 
@@ -2054,6 +2210,11 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         public function filter_shortcode_products($query_args)
         {
+            // On location archive pages, keep archive results untouched.
+            if ($this->is_location_archive_query()) {
+                return $query_args;
+            }
+
             // Check if strict_filtering is enabled
             $options = $this->get_display_options();
             if (isset($options['strict_filtering']) && $options['strict_filtering'] === 'disabled') {
@@ -2395,6 +2556,10 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         public function filter_product_blocks($html, $data, $product)
         {
+            if ($this->is_location_archive_query()) {
+                return $html;
+            }
+
             if (!$this->product_belongs_to_location($product->get_id())) {
                 return '';
             }
@@ -2626,6 +2791,10 @@ if (!function_exists('mulopimfwc_get_values')) {
 
         private function should_apply_filtering($section)
         {
+            if ($this->is_location_archive_query()) {
+                return false;
+            }
+
             $options = $this->get_display_options();
             $location = $this->get_current_location();
             if (!$location || $location === 'all-products') {
@@ -2640,6 +2809,32 @@ if (!function_exists('mulopimfwc_get_values')) {
             return in_array($section, $filtered_sections);
         }
 
+        /**
+         * Check whether the current request/query is a store location archive page.
+         *
+         * @param WP_Query|null $query Optional query object for pre_get_posts/posts_clauses checks.
+         * @return bool
+         */
+        private function is_location_archive_query($query = null)
+        {
+            if ($query instanceof WP_Query) {
+                if (method_exists($query, 'is_tax') && $query->is_tax('mulopimfwc_store_location')) {
+                    return true;
+                }
+
+                $taxonomy = $query->get('taxonomy');
+                if ($taxonomy === 'mulopimfwc_store_location') {
+                    return true;
+                }
+
+                if ($query->get('mulopimfwc_store_location')) {
+                    return true;
+                }
+            }
+
+            return function_exists('is_tax') && is_tax('mulopimfwc_store_location');
+        }
+
         private function get_filtered_location($section)
         {
             if (!$this->should_apply_filtering($section)) {
@@ -2652,6 +2847,11 @@ if (!function_exists('mulopimfwc_get_values')) {
         {
             // Skip admin queries
             if (is_admin()) {
+                return;
+            }
+
+            // Never apply selected-location filtering on location archive pages.
+            if ($this->is_location_archive_query($query)) {
                 return;
             }
 
@@ -2755,6 +2955,11 @@ if (!function_exists('mulopimfwc_get_values')) {
         {
             // Skip admin queries
             if (is_admin()) {
+                return $clauses;
+            }
+
+            // Never apply selected-location filtering on location archive pages.
+            if ($this->is_location_archive_query($query)) {
                 return $clauses;
             }
 
@@ -3148,6 +3353,86 @@ if (!function_exists('mulopimfwc_get_values')) {
     }
 
     add_action('plugins_loaded', 'mulopimfwc_location_wise_products_init');
+
+    if (!function_exists('mulopimfwc_clear_plugin_caches')) {
+        /**
+         * Clear plugin caches/transients.
+         *
+         * @param string $scope 'dashboard' for dashboard metrics only, 'all' for all plugin transients.
+         * @return int Number of deleted option rows (best effort).
+         */
+        function mulopimfwc_clear_plugin_caches($scope = 'dashboard')
+        {
+            $deleted_rows = 0;
+
+            // Dashboard cache keys (keep old keys for backward compatibility).
+            $dashboard_transients = [
+                'mulopimfwc_total_investment',
+                'mulopimfwc_total_investment_v2',
+                'mulopimfwc_total_investment_v3',
+            ];
+
+            foreach ($dashboard_transients as $transient_key) {
+                delete_transient($transient_key);
+            }
+
+            if ($scope === 'all') {
+                global $wpdb;
+                $transient_like = $wpdb->esc_like('_transient_mulopimfwc_') . '%';
+                $timeout_like = $wpdb->esc_like('_transient_timeout_mulopimfwc_') . '%';
+
+                $deleted_rows = (int) $wpdb->query($wpdb->prepare(
+                    "DELETE FROM {$wpdb->options}
+                     WHERE option_name LIKE %s
+                        OR option_name LIKE %s",
+                    $transient_like,
+                    $timeout_like
+                ));
+            }
+
+            return $deleted_rows;
+        }
+    }
+
+    if (!function_exists('mulopimfwc_handle_clear_cache_request')) {
+        /**
+         * Handle manual cache clear request from admin settings.
+         *
+         * @return void
+         */
+        function mulopimfwc_handle_clear_cache_request()
+        {
+            if (!current_user_can('manage_options')) {
+                wp_die(__('You do not have permission to perform this action.', 'multi-location-product-and-inventory-management'));
+            }
+
+            check_admin_referer('mulopimfwc_clear_cache_action');
+
+            $deleted_rows = 0;
+            if (function_exists('mulopimfwc_clear_plugin_caches')) {
+                $deleted_rows = (int) mulopimfwc_clear_plugin_caches('all');
+            }
+
+            $redirect_url = wp_get_referer();
+            if (!$redirect_url) {
+                $redirect_url = admin_url('admin.php?page=multi-location-product-and-inventory-management-settings');
+            }
+
+            $redirect_url = remove_query_arg(['mulopimfwc_cache_cleared', 'mulopimfwc_cache_deleted'], $redirect_url);
+            $redirect_url = add_query_arg(
+                [
+                    'mulopimfwc_cache_cleared' => '1',
+                    'mulopimfwc_cache_deleted' => $deleted_rows,
+                ],
+                $redirect_url
+            );
+
+            wp_safe_redirect($redirect_url);
+            exit;
+        }
+    }
+
+    add_action('admin_post_mulopimfwc_clear_cache', 'mulopimfwc_handle_clear_cache_request');
 
 
 
