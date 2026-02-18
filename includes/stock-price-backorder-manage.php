@@ -381,6 +381,59 @@ function mulopimfwc_get_location_term_id($location_slug)
 }
 
 /**
+ * Normalize backorder values between plugin and WooCommerce formats.
+ *
+ * Plugin location values: off|notify|on
+ * WooCommerce values:     no|notify|yes
+ *
+ * @param mixed  $value  Input value to normalize.
+ * @param string $target Target format: woocommerce|location.
+ * @return string
+ */
+function mulopimfwc_normalize_backorder_value($value, $target = 'woocommerce')
+{
+    $value = is_string($value) ? strtolower(trim($value)) : '';
+
+    if ($target === 'location') {
+        if ($value === 'on' || $value === 'yes') {
+            return 'on';
+        }
+        if ($value === 'notify') {
+            return 'notify';
+        }
+        if ($value === 'off' || $value === 'no') {
+            return 'off';
+        }
+
+        return '';
+    }
+
+    if ($value === 'on' || $value === 'yes') {
+        return 'yes';
+    }
+    if ($value === 'notify') {
+        return 'notify';
+    }
+    if ($value === 'off' || $value === 'no') {
+        return 'no';
+    }
+
+    return '';
+}
+
+/**
+ * Check whether backorders are allowed for a raw backorder value.
+ *
+ * @param mixed $value Raw backorder value.
+ * @return bool
+ */
+function mulopimfwc_is_backorder_allowed($value)
+{
+    $normalized = mulopimfwc_normalize_backorder_value($value, 'woocommerce');
+    return in_array($normalized, ['yes', 'notify'], true);
+}
+
+/**
  * Get assigned location slugs for a product with request-level caching.
  *
  * @param int $product_id Product ID.
@@ -627,8 +680,9 @@ if (!is_admin()) {
         }
 
         $location_backorders = get_post_meta($product->get_id(), '_location_backorders_' . $location_id, true);
+        $normalized_backorders = mulopimfwc_normalize_backorder_value($location_backorders, 'woocommerce');
 
-        return !empty($location_backorders) ? $location_backorders : $backorders;
+        return $normalized_backorders !== '' ? $normalized_backorders : $backorders;
     }, 10, 2);
 }
 if (!is_admin()) {
@@ -687,14 +741,15 @@ if (!is_admin()) {
             return 'outofstock'; // Product is not available in the current location
         }
 
-        // Get backorder setting
-        $backorders = wc_get_product_stock_status_options();
+        // Get effective backorder setting for this location.
         $location_backorders = get_post_meta($product_id, '_location_backorders_' . $location_id, true);
+        $normalized_location_backorders = mulopimfwc_normalize_backorder_value($location_backorders, 'woocommerce');
+        $effective_backorders = $normalized_location_backorders !== '' ? $normalized_location_backorders : $product->get_backorders();
 
         // Determine stock status based on quantity and backorder setting
-        if ($location_stock <= 0 && $location_backorders === 'off') {
+        if ($location_stock <= 0 && !mulopimfwc_is_backorder_allowed($effective_backorders)) {
             return 'outofstock';
-        } elseif ($location_stock <= 0 && $location_backorders !== 'off') {
+        } elseif ($location_stock <= 0 && mulopimfwc_is_backorder_allowed($effective_backorders)) {
             return 'onbackorder';
         } else {
             return 'instock';
@@ -771,8 +826,9 @@ if (!is_admin()) {
         }
 
         $location_backorders = get_post_meta($variation->get_id(), '_location_backorders_' . $location_id, true);
+        $normalized_backorders = mulopimfwc_normalize_backorder_value($location_backorders, 'woocommerce');
 
-        return !empty($location_backorders) ? $location_backorders : $backorders;
+        return $normalized_backorders !== '' ? $normalized_backorders : $backorders;
     }, 10, 2);
 }
 
@@ -981,8 +1037,11 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
 
     $total_required = $qty_in_cart + $quantity;
 
+    $normalized_location_backorders = mulopimfwc_normalize_backorder_value($location_backorders, 'woocommerce');
+    $effective_backorders = $normalized_location_backorders !== '' ? $normalized_location_backorders : ($product ? $product->get_backorders() : '');
+
     // If backorders are not allowed and we don't have enough stock
-    if ($location_backorders === 'off' && $location_stock < $total_required) {
+    if (!mulopimfwc_is_backorder_allowed($effective_backorders) && $location_stock < $total_required) {
         $location_term = get_term_by('slug', $location_slug, 'mulopimfwc_store_location');
         $location_name = $location_term ? $location_term->name : $location_slug;
 
@@ -1391,7 +1450,7 @@ function mulopimfwc_display_location_specific_stock_info()
         if ($location_stock > 0) {
             echo '<span class="in-stock">' . sprintf(esc_html('%d item in stock', '%d items in stock', $location_stock, 'multi-location-product-and-inventory-management'), esc_attr($location_stock)) . '</span>';
         } else {
-            if ($location_backorders === 'off') {
+            if (!mulopimfwc_is_backorder_allowed($location_backorders)) {
                 echo '<span class="out-of-stock">' . esc_html('Out of stock', 'multi-location-product-and-inventory-management') . '</span>';
             } else {
                 echo '<span class="on-backorder">' . esc_html('Available on backorder', 'multi-location-product-and-inventory-management') . '</span>';
@@ -1462,7 +1521,7 @@ function mulopimfwc_display_location_specific_stock_info_loop()
         if ($location_stock > 0) {
             echo '<span class="in-stock">' . sprintf(esc_html('%d in stock', 'multi-location-product-and-inventory-management'), esc_attr($location_stock)) . '</span>';
         } else {
-            if ($location_backorders === 'off') {
+            if (!mulopimfwc_is_backorder_allowed($location_backorders)) {
                 echo '<span class="out-of-stock">' . esc_html('Out of stock', 'multi-location-product-and-inventory-management') . '</span>';
             } else {
                 echo '<span class="on-backorder">' . esc_html('Backorder', 'multi-location-product-and-inventory-management') . '</span>';
@@ -1513,6 +1572,9 @@ function mulopimfwc_add_location_data_to_variations($variation_data, $product, $
 
     // Get backorder setting
     $location_backorders = get_post_meta($variation_id, '_location_backorders_' . $location->term_id, true);
+    if ($location_backorders === '') {
+        $location_backorders = $variation->get_backorders();
+    }
 
     // Add location data to variation data
     $variation_data['location_data'] = [
@@ -1520,7 +1582,7 @@ function mulopimfwc_add_location_data_to_variations($variation_data, $product, $
         'location_stock' => $location_stock,
         'location_regular_price' => wc_price($location_regular_price),
         'location_sale_price' => wc_price($location_sale_price),
-        'location_backorders' => $location_backorders
+        'location_backorders' => mulopimfwc_normalize_backorder_value($location_backorders, 'location')
     ];
 
     return $variation_data;
@@ -1578,7 +1640,7 @@ function mulopimfwc_display_location_stock_status_in_loop()
         if (intval($location_stock) > 0) {
             echo '<span class="stock-badge in-stock">' . esc_html_e('In Stock', 'multi-location-product-and-inventory-management') . '</span>';
         } else {
-            if ($location_backorders === 'off') {
+            if (!mulopimfwc_is_backorder_allowed($location_backorders)) {
                 echo '<span class="stock-badge out-of-stock">' . esc_html_e('Out of Stock', 'multi-location-product-and-inventory-management') . '</span>';
             } else {
                 echo '<span class="stock-badge on-backorder">' . esc_html_e('Backorder', 'multi-location-product-and-inventory-management') . '</span>';
