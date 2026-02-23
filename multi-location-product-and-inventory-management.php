@@ -2805,7 +2805,7 @@ if (!function_exists('mulopimfwc_get_values')) {
                 return false;
             }
 
-            $filtered_sections = isset($options['filtered_sections']) ? $options['filtered_sections'] : [];
+            $filtered_sections = ['shop', 'search', 'related', 'recently_viewed', 'cross_sells', 'upsells', 'widgets', 'blocks', 'rest_api'];
             return in_array($section, $filtered_sections);
         }
 

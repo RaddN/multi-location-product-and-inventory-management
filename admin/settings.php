@@ -498,8 +498,8 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                 $value = isset($options['inventory_sync_mode']) ? $options['inventory_sync_mode'] : 'centralized';
         ?>
             <select name="mulopimfwc_display_options[inventory_sync_mode]">
-                <option disabled value="independent"><?php echo esc_html__('Independent (Each location manages its own inventory)', 'multi-location-product-and-inventory-management'); ?></option>
-                <option value="centralized" selected><?php echo esc_html__('Centralized (Main inventory with location allocations)', 'multi-location-product-and-inventory-management'); ?></option>
+                <option value="independent" selected><?php echo esc_html__('Independent (Each location manages its own inventory)', 'multi-location-product-and-inventory-management'); ?></option>
+                <option disabled value="centralized"><?php echo esc_html__('Centralized (Main inventory with location allocations)', 'multi-location-product-and-inventory-management'); ?></option>
                 <option disabled value="synchronized"><?php echo esc_html__('Synchronized (Changes in one location affect all)', 'multi-location-product-and-inventory-management'); ?></option>
             </select>
             <p class="description"><?php echo esc_html__('Choose how inventory is managed across multiple locations.', 'multi-location-product-and-inventory-management'); ?></p>
@@ -541,11 +541,14 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                     : get_option('mulopimfwc_display_options', ['low_stock_notification_recipients' => 'admin']);
                 $value = isset($options['low_stock_notification_recipients']) ? $options['low_stock_notification_recipients'] : 'admin';
         ?>
-            <select disabled name="mulopimfwc_display_options[low_stock_notification_recipients]">
-                <option value="admin" <?php selected($value, 'admin'); ?>><?php echo esc_html_e('Admin Only', 'multi-location-product-and-inventory-management'); ?></option>
-                <option value="location_manager" <?php selected($value, 'location_manager'); ?>><?php echo esc_html_e('Location Manager', 'multi-location-product-and-inventory-management'); ?></option>
-                <option value="both" <?php selected($value, 'both'); ?>><?php echo esc_html_e('Both Admin and Location Manager', 'multi-location-product-and-inventory-management'); ?></option>
-            </select>
+
+            <label class="mulopimfwc_pro_only">
+                <select disabled name="mulopimfwc_display_options[low_stock_notification_recipients]">
+                    <option value="admin" <?php selected($value, 'admin'); ?>><?php echo esc_html_e('Admin Only', 'multi-location-product-and-inventory-management'); ?></option>
+                    <option value="location_manager" <?php selected($value, 'location_manager'); ?>><?php echo esc_html_e('Location Manager', 'multi-location-product-and-inventory-management'); ?></option>
+                    <option value="both" <?php selected($value, 'both'); ?>><?php echo esc_html_e('Both Admin and Location Manager', 'multi-location-product-and-inventory-management'); ?></option>
+                </select>
+            </label>
             <p class="description"><?php echo esc_html_e('Who should receive low stock notifications.', 'multi-location-product-and-inventory-management'); ?></p>
         <?php
             },
@@ -2185,10 +2188,10 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                 $notif = isset($options['notification_settings']) ? $options['notification_settings'] : [];
                 $value = isset($notif['floating_duration']) ? $notif['floating_duration'] : '6000';
         ?>
-        <div class="mulopimfwc_pro_only">
-            <input disabled type="number" min="2000" step="500" name="mulopimfwc_display_options[notification_settings][floating_duration]" value="<?php echo esc_attr($value); ?>">
-            <p class="description"><?php echo esc_html__('How long floating alerts remain visible.', 'multi-location-product-and-inventory-management'); ?></p>
-        </div>
+            <div class="mulopimfwc_pro_only">
+                <input disabled type="number" min="2000" step="500" name="mulopimfwc_display_options[notification_settings][floating_duration]" value="<?php echo esc_attr($value); ?>">
+                <p class="description"><?php echo esc_html__('How long floating alerts remain visible.', 'multi-location-product-and-inventory-management'); ?></p>
+            </div>
         <?php
             },
             'lwp-admin-notification-settings',
@@ -2203,10 +2206,10 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                 $notif = isset($options['notification_settings']) ? $options['notification_settings'] : [];
                 $value = isset($notif['notification_template']) ? $notif['notification_template'] : '[{event}] {message}';
         ?>
-        <div class="mulopimfwc_pro_only">
-            <textarea disabled name="mulopimfwc_display_options[notification_settings][notification_template]" rows="3" class="large-text"><?php echo esc_textarea($value); ?></textarea>
-            <p class="description"><?php echo esc_html__('Use {event} and {message} placeholders to customize floating and PWA text.', 'multi-location-product-and-inventory-management'); ?></p>
-        </div>
+            <div class="mulopimfwc_pro_only">
+                <textarea disabled name="mulopimfwc_display_options[notification_settings][notification_template]" rows="3" class="large-text"><?php echo esc_textarea($value); ?></textarea>
+                <p class="description"><?php echo esc_html__('Use {event} and {message} placeholders to customize floating and PWA text.', 'multi-location-product-and-inventory-management'); ?></p>
+            </div>
         <?php
             },
             'lwp-admin-notification-settings',
@@ -2254,54 +2257,54 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                 global $mulopimfwc_locations;
 
                 $locations = (!empty($mulopimfwc_locations) && !is_wp_error($mulopimfwc_locations)) ? $mulopimfwc_locations : [];
-                ?>
-                <div id="mulopimfwc-test-notifications-panel mulopimfwc_pro_only" style="max-width: 900px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px;">
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-                        <div>
-                            <strong style="display:block; margin-bottom:2px;"><?php echo esc_html__('Quick tests', 'multi-location-product-and-inventory-management'); ?></strong>
-                            <span class="description"><?php echo esc_html__('Use this to verify floating notifications and email delivery/routing.', 'multi-location-product-and-inventory-management'); ?></span>
-                        </div>
-                        <button disabled type="button" id="mulopimfwc-test-floating-notification" class="button button-secondary">
-                            <?php echo esc_html__('Test Floating Notification', 'multi-location-product-and-inventory-management'); ?>
-                        </button>
+        ?>
+            <div id="mulopimfwc-test-notifications-panel mulopimfwc_pro_only" style="max-width: 900px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                    <div>
+                        <strong style="display:block; margin-bottom:2px;"><?php echo esc_html__('Quick tests', 'multi-location-product-and-inventory-management'); ?></strong>
+                        <span class="description"><?php echo esc_html__('Use this to verify floating notifications and email delivery/routing.', 'multi-location-product-and-inventory-management'); ?></span>
                     </div>
-
-                    <hr style="margin:14px 0; border:0; border-top:1px solid #e5e7eb;">
-
-                    <div style="display:grid; grid-template-columns: 220px 1fr; gap:10px; align-items:center;">
-                        <label for="mulopimfwc-test-email-recipient-type" style="font-weight:600;"><?php echo esc_html__('Send test email to', 'multi-location-product-and-inventory-management'); ?></label>
-                        <select disabled id="mulopimfwc-test-email-recipient-type">
-                            <option disabled value="admin_email"><?php echo esc_html__('Admin email', 'multi-location-product-and-inventory-management'); ?></option>
-                            <option disabled value="location_contact"><?php echo esc_html__('Location contact email', 'multi-location-product-and-inventory-management'); ?></option>
-                            <option disabled value="location_manager"><?php echo esc_html__('Location manager (assigned)', 'multi-location-product-and-inventory-management'); ?></option>
-                            <option disabled value="custom"><?php echo esc_html__('Custom email address', 'multi-location-product-and-inventory-management'); ?></option>
-                        </select>
-
-                        <label for="mulopimfwc-test-email-location" class="mulopimfwc-test-email-location-label" style="font-weight:600;"><?php echo esc_html__('Location', 'multi-location-product-and-inventory-management'); ?></label>
-                        <select disabled id="mulopimfwc-test-email-location" class="mulopimfwc-test-email-location">
-                            <option value=""><?php echo esc_html__('Select a location…', 'multi-location-product-and-inventory-management'); ?></option>
-                            <?php foreach ($locations as $loc) : ?>
-                                <option disabled value="<?php echo esc_attr(rawurldecode($loc->slug)); ?>"><?php echo esc_html($loc->name); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <label for="mulopimfwc-test-email-manager" class="mulopimfwc-test-email-manager-label" style="font-weight:600;"><?php echo esc_html__('Location manager', 'multi-location-product-and-inventory-management'); ?></label>
-                        <select disabled id="mulopimfwc-test-email-manager" class="mulopimfwc-test-email-manager">
-                            <option disabled value="all"><?php echo esc_html__('All managers for selected location', 'multi-location-product-and-inventory-management'); ?></option>
-                        </select>
-
-                        <label for="mulopimfwc-test-email-custom" class="mulopimfwc-test-email-custom-label" style="font-weight:600;"><?php echo esc_html__('Email address', 'multi-location-product-and-inventory-management'); ?></label>
-                        <input disabled type="email" id="mulopimfwc-test-email-custom" class="mulopimfwc-test-email-custom" placeholder="<?php echo esc_attr__('name@example.com', 'multi-location-product-and-inventory-management'); ?>" />
-                    </div>
-
-                    <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <button disabled type="button" id="mulopimfwc-send-test-email" class="button button-primary"><?php echo esc_html__('Send Test Email', 'multi-location-product-and-inventory-management'); ?></button>
-                        <span class="description"><?php echo esc_html__('This sends a simple test email and reports the resolved recipient(s).', 'multi-location-product-and-inventory-management'); ?></span>
-                    </div>
-
-                    <div id="mulopimfwc-test-email-result" style="margin-top:10px;"></div>
+                    <button disabled type="button" id="mulopimfwc-test-floating-notification" class="button button-secondary">
+                        <?php echo esc_html__('Test Floating Notification', 'multi-location-product-and-inventory-management'); ?>
+                    </button>
                 </div>
-                <?php
+
+                <hr style="margin:14px 0; border:0; border-top:1px solid #e5e7eb;">
+
+                <div style="display:grid; grid-template-columns: 220px 1fr; gap:10px; align-items:center;">
+                    <label for="mulopimfwc-test-email-recipient-type" style="font-weight:600;"><?php echo esc_html__('Send test email to', 'multi-location-product-and-inventory-management'); ?></label>
+                    <select disabled id="mulopimfwc-test-email-recipient-type">
+                        <option disabled value="admin_email"><?php echo esc_html__('Admin email', 'multi-location-product-and-inventory-management'); ?></option>
+                        <option disabled value="location_contact"><?php echo esc_html__('Location contact email', 'multi-location-product-and-inventory-management'); ?></option>
+                        <option disabled value="location_manager"><?php echo esc_html__('Location manager (assigned)', 'multi-location-product-and-inventory-management'); ?></option>
+                        <option disabled value="custom"><?php echo esc_html__('Custom email address', 'multi-location-product-and-inventory-management'); ?></option>
+                    </select>
+
+                    <label for="mulopimfwc-test-email-location" class="mulopimfwc-test-email-location-label" style="font-weight:600;"><?php echo esc_html__('Location', 'multi-location-product-and-inventory-management'); ?></label>
+                    <select disabled id="mulopimfwc-test-email-location" class="mulopimfwc-test-email-location">
+                        <option value=""><?php echo esc_html__('Select a location…', 'multi-location-product-and-inventory-management'); ?></option>
+                        <?php foreach ($locations as $loc) : ?>
+                            <option disabled value="<?php echo esc_attr(rawurldecode($loc->slug)); ?>"><?php echo esc_html($loc->name); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <label for="mulopimfwc-test-email-manager" class="mulopimfwc-test-email-manager-label" style="font-weight:600;"><?php echo esc_html__('Location manager', 'multi-location-product-and-inventory-management'); ?></label>
+                    <select disabled id="mulopimfwc-test-email-manager" class="mulopimfwc-test-email-manager">
+                        <option disabled value="all"><?php echo esc_html__('All managers for selected location', 'multi-location-product-and-inventory-management'); ?></option>
+                    </select>
+
+                    <label for="mulopimfwc-test-email-custom" class="mulopimfwc-test-email-custom-label" style="font-weight:600;"><?php echo esc_html__('Email address', 'multi-location-product-and-inventory-management'); ?></label>
+                    <input disabled type="email" id="mulopimfwc-test-email-custom" class="mulopimfwc-test-email-custom" placeholder="<?php echo esc_attr__('name@example.com', 'multi-location-product-and-inventory-management'); ?>" />
+                </div>
+
+                <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button disabled type="button" id="mulopimfwc-send-test-email" class="button button-primary"><?php echo esc_html__('Send Test Email', 'multi-location-product-and-inventory-management'); ?></button>
+                    <span class="description"><?php echo esc_html__('This sends a simple test email and reports the resolved recipient(s).', 'multi-location-product-and-inventory-management'); ?></span>
+                </div>
+
+                <div id="mulopimfwc-test-email-result" style="margin-top:10px;"></div>
+            </div>
+        <?php
             },
             'lwp-admin-notification-settings',
             'mulopimfwc_admin_notifications_section'
@@ -2315,10 +2318,10 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                 $notif = isset($options['notification_settings']) ? $options['notification_settings'] : [];
                 $value = isset($notif['poll_interval']) ? $notif['poll_interval'] : '30000';
         ?>
-        <div class="mulopimfwc_pro_only">
-            <input disabled type="number" min="5000" step="5000" name="mulopimfwc_display_options[notification_settings][poll_interval]" value="<?php echo esc_attr($value); ?>">
-            <p class="description"><?php echo esc_html__('How often to check for new alerts (minimum 5000ms). Lower values increase server load.', 'multi-location-product-and-inventory-management'); ?></p>
-        </div>
+            <div class="mulopimfwc_pro_only">
+                <input disabled type="number" min="5000" step="5000" name="mulopimfwc_display_options[notification_settings][poll_interval]" value="<?php echo esc_attr($value); ?>">
+                <p class="description"><?php echo esc_html__('How often to check for new alerts (minimum 5000ms). Lower values increase server load.', 'multi-location-product-and-inventory-management'); ?></p>
+            </div>
         <?php
             },
             'lwp-admin-notification-settings',
@@ -2333,14 +2336,14 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                 $notif = isset($options['notification_settings']) ? $options['notification_settings'] : [];
                 $value = isset($notif['notification_style']) ? $notif['notification_style'] : 'modern';
         ?>
-        <div class="mulopimfwc_pro_only">
-            <select disabled name="mulopimfwc_display_options[notification_settings][notification_style]">
-                <option value="modern" <?php selected($value, 'modern'); ?>><?php echo esc_html__('Modern', 'multi-location-product-and-inventory-management'); ?></option>
-                <option value="minimal" <?php selected($value, 'minimal'); ?>><?php echo esc_html__('Minimal', 'multi-location-product-and-inventory-management'); ?></option>
-                <option value="classic" <?php selected($value, 'classic'); ?>><?php echo esc_html__('Classic', 'multi-location-product-and-inventory-management'); ?></option>
-            </select>
-            <p class="description"><?php echo esc_html__('Choose the visual style for floating notifications.', 'multi-location-product-and-inventory-management'); ?></p>
-        </div>
+            <div class="mulopimfwc_pro_only">
+                <select disabled name="mulopimfwc_display_options[notification_settings][notification_style]">
+                    <option value="modern" <?php selected($value, 'modern'); ?>><?php echo esc_html__('Modern', 'multi-location-product-and-inventory-management'); ?></option>
+                    <option value="minimal" <?php selected($value, 'minimal'); ?>><?php echo esc_html__('Minimal', 'multi-location-product-and-inventory-management'); ?></option>
+                    <option value="classic" <?php selected($value, 'classic'); ?>><?php echo esc_html__('Classic', 'multi-location-product-and-inventory-management'); ?></option>
+                </select>
+                <p class="description"><?php echo esc_html__('Choose the visual style for floating notifications.', 'multi-location-product-and-inventory-management'); ?></p>
+            </div>
         <?php
             },
             'lwp-admin-notification-settings',
@@ -2383,9 +2386,9 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
             "",
             function () {
                 global $mulopimfwc_options;
-            $options = is_array($mulopimfwc_options ?? null)
-                ? $mulopimfwc_options
-                : get_option('mulopimfwc_display_options', []);
+                $options = is_array($mulopimfwc_options ?? null)
+                    ? $mulopimfwc_options
+                    : get_option('mulopimfwc_display_options', []);
                 $defaults = [
                     'enabled' => 'off',
                     'new_order' => 'on',
@@ -2491,7 +2494,7 @@ Popup Settings', 'multi-location-product-and-inventory-management'),
                                         </div>
                                         <div>
                                             <label style="font-weight:600;"><?php echo esc_html__('Label (optional)', 'multi-location-product-and-inventory-management'); ?></label>
-                                            <input disabled  type="text" name="mulopimfwc_display_options[social_notifications][channels][<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($label); ?>" placeholder="<?php echo esc_attr__('e.g., Admin alerts', 'multi-location-product-and-inventory-management'); ?>" style="width:100%;">
+                                            <input disabled type="text" name="mulopimfwc_display_options[social_notifications][channels][<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($label); ?>" placeholder="<?php echo esc_attr__('e.g., Admin alerts', 'multi-location-product-and-inventory-management'); ?>" style="width:100%;">
                                         </div>
                                         <div class="mulopimfwc-field-webhook">
                                             <label style="font-weight:600;"><?php echo esc_html__('Webhook URL', 'multi-location-product-and-inventory-management'); ?></label>
@@ -3105,13 +3108,13 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
             'mulopimfwc_filter_settings_section'
         );
 
-        add_settings_field(
-            'mulopimfwc_filtered_sections',
-            __('Apply Location Filtering To', 'multi-location-product-and-inventory-management'),
-            [$this, 'filtered_sections_field_callback'],
-            'lwp-product-filtering-settings',
-            'mulopimfwc_filter_settings_section'
-        );
+        // add_settings_field(
+        //     'mulopimfwc_filtered_sections',
+        //     __('Apply Location Filtering To', 'multi-location-product-and-inventory-management'),
+        //     [$this, 'filtered_sections_field_callback'],
+        //     'lwp-product-filtering-settings',
+        //     'mulopimfwc_filter_settings_section'
+        // );
 
         // Add Order Fulfillment section
         add_settings_section(
@@ -4222,11 +4225,11 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                                         <?php do_settings_sections('lwp-import-export-settings'); ?>
                                     </div>
                                 </div>
-                                <div class="lwp-settings-section">
+                                <!-- <div class="lwp-settings-section">
                                     <div class="lwp-settings-box">
-                                        <?php do_settings_sections('lwp-location-allocation-settings'); ?>
+                                        <?php //do_settings_sections('lwp-location-allocation-settings'); ?>
                                     </div>
-                                </div>
+                                </div> -->
                             </div>
                             <?php submit_button(); ?>
                         </form>
@@ -5499,10 +5502,10 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
         $options = $this->get_display_options();
         $value = isset($options['branding_popup_overlay']) ? $options['branding_popup_overlay'] : 'rgba(15, 23, 42, 0.65)';
     ?>
-    <div class="mulopimfwc_pro_only">
-        <input disabled type="text" name="mulopimfwc_display_options[branding_popup_overlay]" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="rgba(15, 23, 42, 0.65)" />
-        <p class="description"><?php echo esc_html__('Background color for popup overlay (supports rgba format).', 'multi-location-product-and-inventory-management'); ?></p>
-    </div>
+        <div class="mulopimfwc_pro_only">
+            <input disabled type="text" name="mulopimfwc_display_options[branding_popup_overlay]" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="rgba(15, 23, 42, 0.65)" />
+            <p class="description"><?php echo esc_html__('Background color for popup overlay (supports rgba format).', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
     <?php
     }
 
@@ -5581,14 +5584,14 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
             'Poppins' => 'Poppins',
         ];
     ?>
-    <div class="mulopimfwc_pro_only">
-        <select disabled name="mulopimfwc_display_options[branding_font_family]" class="regular-text">
-            <?php foreach ($font_options as $font => $label) : ?>
-                <option disabled value="<?php echo esc_attr($font); ?>" <?php selected($value, $font); ?>><?php echo esc_html($label); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <p class="description"><?php echo esc_html__('Font family for popup and frontend elements.', 'multi-location-product-and-inventory-management'); ?></p>
-    </div>
+        <div class="mulopimfwc_pro_only">
+            <select disabled name="mulopimfwc_display_options[branding_font_family]" class="regular-text">
+                <?php foreach ($font_options as $font => $label) : ?>
+                    <option disabled value="<?php echo esc_attr($font); ?>" <?php selected($value, $font); ?>><?php echo esc_html($label); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php echo esc_html__('Font family for popup and frontend elements.', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
     <?php
     }
 
@@ -5597,10 +5600,10 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
         $options = $this->get_display_options();
         $value = isset($options['branding_box_shadow']) ? $options['branding_box_shadow'] : '0 18px 45px rgba(24, 24, 24, 0.18)';
     ?>
-    <div class="mulopimfwc_pro_only">
-        <input disabled type="text" name="mulopimfwc_display_options[branding_box_shadow]" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="0 18px 45px rgba(24, 24, 24, 0.18)" />
-        <p class="description"><?php echo esc_html__('Box shadow for popups and cards (e.g., 0 18px 45px rgba(24, 24, 24, 0.18)).', 'multi-location-product-and-inventory-management'); ?></p>
-    </div>
+        <div class="mulopimfwc_pro_only">
+            <input disabled type="text" name="mulopimfwc_display_options[branding_box_shadow]" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="0 18px 45px rgba(24, 24, 24, 0.18)" />
+            <p class="description"><?php echo esc_html__('Box shadow for popups and cards (e.g., 0 18px 45px rgba(24, 24, 24, 0.18)).', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
     <?php
     }
 
@@ -5609,10 +5612,10 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
         $options = $this->get_display_options();
         $value = isset($options['branding_border_radius']) ? $options['branding_border_radius'] : '20px';
     ?>
-    <div class="mulopimfwc_pro_only">
-        <input disabled type="text" name="mulopimfwc_display_options[branding_border_radius]" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="20px" />
-        <p class="description"><?php echo esc_html__('Border radius for popups and buttons (e.g., 20px, 10px, 5px).', 'multi-location-product-and-inventory-management'); ?></p>
-    </div>
+        <div class="mulopimfwc_pro_only">
+            <input disabled type="text" name="mulopimfwc_display_options[branding_border_radius]" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="20px" />
+            <p class="description"><?php echo esc_html__('Border radius for popups and buttons (e.g., 20px, 10px, 5px).', 'multi-location-product-and-inventory-management'); ?></p>
+        </div>
     <?php
     }
 
