@@ -621,7 +621,7 @@ class MULOPIMFWC_Dashboard
                     COALESCE(SUM(CAST(pm.meta_value AS SIGNED)), 0) AS value
              FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-             WHERE p.post_type = 'product'
+             WHERE p.post_type IN ('product', 'product_variation')
                AND p.post_status = 'publish'
                AND pm.meta_key IN ({$meta_placeholders})
                AND pm.meta_value != ''
