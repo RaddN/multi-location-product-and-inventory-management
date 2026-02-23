@@ -378,26 +378,13 @@ class MULOPIMFWC_Product_Location_Selector
      */
     private function get_available_locations(): array
     {
-        $all_locations = get_terms([
-            'taxonomy' => self::TAXONOMY,
-            'hide_empty' => false,
-        ]);
+        $product_locations = get_the_terms($this->current_product->get_id(), self::TAXONOMY);
 
-        if (empty($all_locations) || is_wp_error($all_locations)) {
+        if (empty($product_locations) || is_wp_error($product_locations)) {
             return [];
         }
 
-        $product_locations = get_the_terms($this->current_product->get_id(), self::TAXONOMY);
-
-        // If product has specific locations, filter to only those
-        if (!empty($product_locations) && !is_wp_error($product_locations)) {
-            $product_slugs = wp_list_pluck($product_locations, 'slug');
-            return array_filter($all_locations, function ($location) use ($product_slugs) {
-                return in_array($location->slug, $product_slugs, true);
-            });
-        }
-
-        return $all_locations;
+        return array_values($product_locations);
     }
 
     /**
