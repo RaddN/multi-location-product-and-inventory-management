@@ -112,6 +112,47 @@ class mulopimfwc_Stock_Central
                 font-weight: 500;
             }
 
+            .mlsctock-cenral-main form .column-title .mulopimfwc-product-meta {
+                margin-top: 4px;
+                color: #646970;
+                font-size: 13px;
+                line-height: 1.4;
+            }
+
+            .mlsctock-cenral-main form .column-title .mulopimfwc-product-id {
+                margin-right: 6px;
+            }
+
+            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status {
+                display: inline-block;
+                padding: 1px 8px;
+                border: 1px solid #c3c4c7;
+                border-radius: 999px;
+                background: #f6f7f7;
+                color: #50575e;
+                font-size: 12px;
+                line-height: 1.5;
+                vertical-align: middle;
+            }
+
+            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status.status-private {
+                border-color: #72aee6;
+                background: #f0f6fc;
+                color: #135e96;
+            }
+
+            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status.status-pending {
+                border-color: #dba617;
+                background: #fcf9e8;
+                color: #735c0f;
+            }
+
+            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status.status-draft {
+                border-color: #8c8f94;
+                background: #f0f0f1;
+                color: #50575e;
+            }
+
             .mlsctock-cenral-main form .deactivate-location {
                 background-color: #fef2f2;
                 color: #dc2626;

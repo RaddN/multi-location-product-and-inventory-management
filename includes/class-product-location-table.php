@@ -219,6 +219,26 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
         $quick_edit_data = isset($item['quick_edit_data']) ? $item['quick_edit_data'] : null;
 
         $title = '<strong><a target="_blank" rel="noopener noreferrer" href="' . esc_url($edit_link) . '">' . esc_html($item['title']) . '</a></strong>';
+
+        $product_id_text = sprintf(
+            /* translators: %d is the product ID. */
+            __('ID: %d', 'multi-location-product-and-inventory-management'),
+            $item['id']
+        );
+        $title .= '<div class="mulopimfwc-product-meta">';
+        $title .= '<span class="mulopimfwc-product-id">' . esc_html($product_id_text) . '</span>';
+
+        $post_status = isset($item['status']) ? $item['status'] : get_post_status($item['id']);
+        if (!empty($post_status) && 'publish' !== $post_status) {
+            $status_object = get_post_status_object($post_status);
+            $status_label = ($status_object && !empty($status_object->label))
+                ? $status_object->label
+                : ucfirst($post_status);
+
+            $title .= ' <span class="post-state mulopimfwc-product-status status-' . esc_attr($post_status) . '">' . esc_html($status_label) . '</span>';
+        }
+        $title .= '</div>';
+
         $title .= '<div class="row-actions">';
         $title .= '<span class="edit"><a target="_blank" rel="noopener noreferrer" href="' . esc_url($edit_link) . '">' . __('Edit', 'multi-location-product-and-inventory-management') . '</a> | </span>';
         $title .= '<span class="view"><a target="_blank" rel="noopener noreferrer" href="' . esc_url($view_link) . '">' . __('View', 'multi-location-product-and-inventory-management') . '</a> | </span>';
@@ -900,7 +920,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
             'post_type' => 'product',
             'posts_per_page' => $per_page,
             'paged' => $current_page,
-            'post_status' => 'publish',
+            'post_status' => ['publish', 'draft', 'private', 'pending'],
             'no_found_rows' => false, // We need found_posts for pagination
             'nopaging' => false, // Explicitly disable loading all posts - CRITICAL for memory management
         ];
@@ -1222,6 +1242,7 @@ class mulopimfwc_Product_Location_Table extends WP_List_Table
                     'id' => $product_id,
                     'title' => $product->get_name(),
                     'image' => $thumbnail,
+                    'status' => get_post_status($product_id),
                     'location_terms' => is_wp_error($location_terms) ? [] : $location_terms,
                     'type' => $product_type,
                     'variations' => $product_type === 'variable' ? $variations : [],
