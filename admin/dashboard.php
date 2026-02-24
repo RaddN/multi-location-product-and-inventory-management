@@ -756,6 +756,14 @@ class MULOPIMFWC_Dashboard
     {
         global $wpdb;
 
+        $product_statuses = get_post_stati(['show_in_admin_all_list' => true], 'names');
+        if (empty($product_statuses) || !is_array($product_statuses)) {
+            $product_statuses = ['publish', 'future', 'draft', 'pending', 'private'];
+        }
+        $product_statuses = array_values($product_statuses);
+
+        $status_placeholders = implode(',', array_fill(0, count($product_statuses), '%s'));
+
         // Check if current user is a location manager
         $is_location_manager = false;
         $assigned_location_slugs = [];
@@ -805,17 +813,24 @@ class MULOPIMFWC_Dashboard
             INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
             INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
             WHERE p.post_type = 'product' 
-            AND p.post_status = 'publish'
+            AND p.post_status IN ({$status_placeholders})
             AND tt.taxonomy = 'mulopimfwc_store_location'
             AND tt.term_id IN ({$term_ids_placeholder})",
-                ...$term_ids
+                ...array_merge($product_statuses, $term_ids)
             );
 
             return (int) $wpdb->get_var($query);
         }
 
         // For admins and other users, return all products
-        $query = "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish'";
+        $query = $wpdb->prepare(
+            "SELECT COUNT(*)
+             FROM {$wpdb->posts}
+             WHERE post_type = 'product'
+               AND post_status IN ({$status_placeholders})",
+            ...$product_statuses
+        );
+
         return (int) $wpdb->get_var($query);
     }
 
