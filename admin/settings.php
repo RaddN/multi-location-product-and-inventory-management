@@ -4020,6 +4020,7 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                             echo $this->mls_nav_tabs("#location-wise-everything", "nav-tab", '<svg class="svg-inline--fa fa-map-location-dot" aria-hidden="true" data-prefix="fas" data-icon="map-location-dot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 16" width="18" height="16"><path fill="#ef4444" d="M12.75 3.75c0 1.706-2.284 4.747-3.288 6-.241.3-.688.3-.925 0-1.003-1.253-3.287-4.294-3.287-6C5.25 1.678 6.928 0 9 0s3.75 1.678 3.75 3.75M13 6.263q.163-.324.3-.644l.047-.116 3.625-1.45A.75.75 0 0 1 18 4.75v8.463a.755.755 0 0 1-.472.697L13 15.719zM4.3 4.322c.075.441.225.884.4 1.297q.136.319.3.644v7.856l-3.972 1.59A.75.75 0 0 1 0 15.012V6.55c0-.306.188-.581.472-.697l3.831-1.531zm5.944 6.053A33 33 0 0 0 12 7.969v7.791l-6-1.716V7.969a33 33 0 0 0 1.756 2.406c.641.8 1.847.8 2.487 0M9 4.75a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 1 0 0 2.5"/></svg>', esc_html__('Location Wise Everything', 'multi-location-product-and-inventory-management'));
                             echo $this->mls_nav_tabs("#customer-experience", "nav-tab", '<svg class="svg-inline--fa fa-users" aria-hidden="true" data-prefix="fas" data-icon="users" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 16" width="20" height="16"><path fill="#06b6d4" d="M4.5 0a2.5 2.5 0 1 1 0 5 2.5 2.5 0 1 1 0-5M16 0a2.5 2.5 0 1 1 0 5 2.5 2.5 0 1 1 0-5M0 9.334A3.336 3.336 0 0 1 3.334 6h1.334c.497 0 .969.109 1.394.303A4 4 0 0 0 7.356 10H.666A.67.67 0 0 1 0 9.334M12.666 10h-.022a4 4 0 0 0 1.353-3q-.002-.355-.059-.697A3.3 3.3 0 0 1 15.332 6h1.334A3.335 3.335 0 0 1 20 9.334c0 .369-.3.666-.666.666zM7 7a3 3 0 1 1 6 0 3 3 0 1 1-6 0m-3 8.166C4 12.866 5.866 11 8.166 11h3.669c2.3 0 4.166 1.866 4.166 4.166a.834.834 0 0 1-.834.834H4.834A.834.834 0 0 1 4 15.166"/></svg>', esc_html__('User Experience', 'multi-location-product-and-inventory-management'));
                             echo $this->mls_nav_tabs("#extensions", "nav-tab", '<svg width="16" height="16" viewBox="0 0 0.48 0.48" xmlns="http://www.w3.org/2000/svg"><path fill="#f59e0b" d="M.04.418V.329h.044A.044.044 0 0 0 .128.277.046.046 0 0 0 .082.24H.04V.151A.02.02 0 0 1 .062.129h.089V.084A.044.044 0 0 1 .203.04.046.046 0 0 1 .24.087v.042h.089a.02.02 0 0 1 .022.022V.24h.042a.046.046 0 0 1 .046.037.044.044 0 0 1-.044.052H.351v.089A.02.02 0 0 1 .329.44H.262V.396A.044.044 0 0 0 .21.352a.046.046 0 0 0-.037.046V.44H.062A.02.02 0 0 1 .04.418"/></svg>', esc_html__('Location Info Management', 'multi-location-product-and-inventory-management'));
+                            echo $this->mls_nav_tabs("#text-management-settings", "nav-tab", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px;vertical-align:middle"><path fill="#0ea5e9" d="M4 4h16v2H4V4zm0 5h16v2H4V9zm0 5h10v2H4v-2z"/></svg>', esc_html__('Text Management', 'multi-location-product-and-inventory-management'));
                             echo $this->mls_nav_tabs("#advance-settings", "nav-tab", '<svg class="svg-inline--fa fa-gear" aria-hidden="true" data-prefix="fas" data-icon="gear" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill="#6366f1" d="M15.497 5.206c.1.272.016.575-.2.769l-1.353 1.231a6 6 0 0 1 0 1.588l1.353 1.231c.216.194.3.497.2.769a8 8 0 0 1-.494 1.072l-.147.253a8 8 0 0 1-.691.975.71.71 0 0 1-.766.212l-1.741-.553a6 6 0 0 1-1.375.794l-.391 1.784a.71.71 0 0 1-.569.556 8 8 0 0 1-2.656 0 .71.71 0 0 1-.569-.556l-.391-1.784a6 6 0 0 1-1.375-.794l-1.738.556a.72.72 0 0 1-.766-.212 8 8 0 0 1-.691-.975l-.147-.253a8 8 0 0 1-.494-1.072.71.71 0 0 1 .2-.769l1.353-1.231Q1.997 8.403 1.996 8c-.001-.403.019-.534.053-.794L.696 5.975a.71.71 0 0 1-.2-.769A8 8 0 0 1 .99 4.134l.147-.253q.31-.516.691-.975a.71.71 0 0 1 .766-.212l1.741.553a6 6 0 0 1 1.375-.794L6.101.669A.71.71 0 0 1 6.67.113Q7.32 0 8 0c.68 0 .897.037 1.328.109a.71.71 0 0 1 .569.556l.391 1.784c.494.203.956.472 1.375.794l1.741-.553a.72.72 0 0 1 .766.212q.38.459.691.975l.147.253q.287.515.494 1.072zM8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 1 0 0 5"/></svg>', esc_html__('Advanced', 'multi-location-product-and-inventory-management'));
                             echo $this->mls_nav_tabs("#license-settings", "nav-tab", '<svg width="16" height="16" viewBox="-0.026 0 0.943 0.943" xmlns="http://www.w3.org/2000/svg"><path data-name="19" d="M.528.447.571.404.505.338.462.381.393.312A.158.158 0 1 0 .23.062a.126.126 0 1 0-.175.18.158.158 0 1 0 .257.157l.066.066-.037.036.066.066L.444.53l.175.175-.096.096.033.033a.049.049 0 1 1 .068.068l.04.04L.76.846l.047.047.084-.084ZM.355.081a.077.077 0 1 1-.077.077.077.077 0 0 1 .077-.077M.309.309.308.31.307.308ZM.132.081A.062.062 0 1 1 .07.143.06.06 0 0 1 .132.081m.026.357A.077.077 0 1 1 .235.361a.077.077 0 0 1-.077.077" fill="#59bdff"/></svg>', esc_html__('Plugin License', 'multi-location-product-and-inventory-management'));
                             ?>
@@ -4044,6 +4045,9 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
                                         <?php do_settings_sections('location-popup-shortcode-settings'); ?>
                                     </div>
                                 </div>
+                            </div>
+                            <div id="text-management-settings" class="lwp-tab-content" style="display:none;">
+                                <?php $this->render_text_management_tab(); ?>
                             </div>
                             <div id="product-visibility-settings" class="lwp-tab-content" style="display:none;">
                                 <div class="lwp-settings-section">
@@ -5358,6 +5362,435 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
         </div>
 
     <?php
+    }
+
+    private function render_text_management_tab(): void
+    {
+        if (!function_exists('mulopimfwc_get_text_management_fields')) {
+            echo '<p>' . esc_html__('Text management configuration is not available.', 'multi-location-product-and-inventory-management') . '</p>';
+            return;
+        }
+
+        $options = $this->get_display_options();
+        $current_template = isset($options['template_selection']) ? $options['template_selection'] : 'default';
+        $is_manual_mode = false;
+        $groups = mulopimfwc_get_text_management_fields();
+        $translation_data = [];
+        $translation_locales = [];
+        $translation_file = plugin_dir_path(__DIR__) . 'assets/i18n/text-management.json';
+        if (file_exists($translation_file)) {
+            $raw_translation = file_get_contents($translation_file);
+            $decoded_translation = json_decode($raw_translation, true);
+            if (is_array($decoded_translation)) {
+                $translation_data = $decoded_translation;
+                if (!empty($decoded_translation['locales']) && is_array($decoded_translation['locales'])) {
+                    $translation_locales = $decoded_translation['locales'];
+                }
+            }
+        }
+
+        echo '<style>
+            .mulopimfwc-text-management-intro {
+                background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+                border: 1px solid #e2e8f0;
+                border-radius: 16px;
+                padding: 22px 24px;
+                margin-bottom: 22px;
+                box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            }
+            .mulopimfwc-text-management-intro__header {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-width: 720px;
+            }
+            .mulopimfwc-text-management-intro__eyebrow {
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: #6366f1;
+            }
+            .mulopimfwc-text-management-intro h2 {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .mulopimfwc-text-management-intro p {
+                margin: 0;
+                color: #475569;
+                line-height: 1.6;
+            }
+            .mulopimfwc-text-management-intro__actions {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 16px;
+                margin-top: 16px;
+            }
+            .mulopimfwc-text-action-card {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                padding: 16px;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .mulopimfwc-text-action-card__header {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+            }
+            .mulopimfwc-text-action-card__icon {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #e0f2fe;
+                color: #0284c7;
+                flex-shrink: 0;
+            }
+            .mulopimfwc-text-action-card--reset .mulopimfwc-text-action-card__icon {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+            .mulopimfwc-text-action-title {
+                margin: 0;
+                font-size: 14px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .mulopimfwc-text-action-subtitle {
+                margin: 2px 0 0 0;
+                font-size: 12px;
+                color: #64748b;
+            }
+            .mulopimfwc-text-action-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .mulopimfwc-text-translate-select {
+                flex: 1;
+                min-width: 180px;
+            }
+            .mulopimfwc-text-management-intro__note {
+                margin: 0;
+                font-size: 12px;
+                color: #64748b;
+            }
+            .mulopimfwc-text-reset-button {
+                background: #fef2f2;
+                color: #b91c1c;
+                border-color: #fecaca;
+            }
+            .mulopimfwc-text-reset-button:hover {
+                background: #fee2e2;
+                border-color: #fca5a5;
+                color: #991b1b;
+            }
+            .mulopimfwc-text-reset-button:focus {
+                box-shadow: 0 0 0 1px #fecaca;
+            }
+            @media (max-width: 900px) {
+                .mulopimfwc-text-action-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+            }
+            .mulopimfwc-text-group + .mulopimfwc-text-group {
+                margin-top: 20px;
+            }
+            .mulopimfwc-text-group__header {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                margin-bottom: 16px;
+            }
+            .mulopimfwc-text-group__title {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .mulopimfwc-text-group__desc {
+                margin: 4px 0 0 0;
+                color: #64748b;
+            }
+            .mulopimfwc-text-fields {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 16px;
+            }
+            .mulopimfwc-text-field {
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 12px 14px;
+            }
+            .mulopimfwc-text-field__header {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .mulopimfwc-text-field label {
+                font-weight: 600;
+                color: #111827;
+            }
+            .mulopimfwc-text-field__tags {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .mulopimfwc-text-field__tag {
+                font-size: 11px;
+                padding: 2px 6px;
+                border-radius: 999px;
+                background: #e2e8f0;
+                color: #475569;
+            }
+            .mulopimfwc-text-field__tag--pro {
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+            .mulopimfwc-text-field input[type="text"],
+            .mulopimfwc-text-field textarea {
+                width: 100%;
+                max-width: 100%;
+            }
+            .mulopimfwc-text-field__default {
+                margin: 6px 0 0;
+                font-size: 12px;
+                color: #6b7280;
+                line-height: 1.5;
+            }
+            .mulopimfwc-text-field__default strong {
+                color: #374151;
+                font-weight: 600;
+            }
+        </style>';
+
+        echo '<div class="mulopimfwc-text-management-intro">
+                <div class="mulopimfwc-text-management-intro__header">
+                    <span class="mulopimfwc-text-management-intro__eyebrow">' . esc_html__('Text Management', 'multi-location-product-and-inventory-management') . '</span>
+                    <h2>' . esc_html__('Text Management Overview', 'multi-location-product-and-inventory-management') . '</h2>
+                    <p>' . esc_html__('Update every customer-facing label, prompt, and message from one place. Each section groups related text so it is clear where the copy appears on the storefront.', 'multi-location-product-and-inventory-management') . '</p>
+                </div>
+                <div class="mulopimfwc-text-management-intro__actions">';
+
+        if (!empty($translation_locales)) {
+            echo '<div class="mulopimfwc-text-action-card mulopimfwc-text-action-card--translate '.(!mulopimfwc_premium_feature() ? 'mulopimfwc_pro_only' : '').'">
+                    <div class="mulopimfwc-text-action-card__header">
+                        <div class="mulopimfwc-text-action-card__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                <path fill="currentColor" d="M12 3l8 4v6c0 5-3.4 8-8 8s-8-3-8-8V7l8-4m0 2.2L6 7.3v5.7c0 3.8 2.5 6 6 6s6-2.2 6-6V7.3l-6-2.1M9 9h2.6l1.4 4.2 1.1-3.2h2.1l-2.4 6h-1.6l-1.4-4.2L9.5 16H8l-2.4-6h2.1l1.1 3.2L9 9z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="mulopimfwc-text-action-title">' . esc_html__('Quick Translate', 'multi-location-product-and-inventory-management') . '</p>
+                            <p class="mulopimfwc-text-action-subtitle">' . esc_html__('Apply a preset language pack to all text fields.', 'multi-location-product-and-inventory-management') . '</p>
+                        </div>
+                    </div>
+                    <div class="mulopimfwc-text-action-row ">
+                        <select '.(!mulopimfwc_premium_feature() ? 'disabled' : '').' id="mulopimfwc-text-translate-select" class="mulopimfwc-text-translate-select">
+                            <option value="">' . esc_html__('Select language', 'multi-location-product-and-inventory-management') . '</option>';
+            foreach ($translation_locales as $locale_code => $locale_data) {
+                $label = $locale_data['label'] ?? $locale_code;
+                $native = $locale_data['nativeLabel'] ?? '';
+                $display = $label;
+                if (!empty($native) && $native !== $label) {
+                    $display .= ' (' . $native . ')';
+                }
+                echo '<option value="' . esc_attr($locale_code) . '">' . esc_html($display) . '</option>';
+            }
+            echo '</select>
+                        <button '.(!mulopimfwc_premium_feature() ? 'disabled' : '').' type="button" id="mulopimfwc-text-translate-apply" class="button button-primary">' . esc_html__('Apply Translation', 'multi-location-product-and-inventory-management') . '</button>
+                    </div>
+                    <p class="mulopimfwc-text-management-intro__note">' . esc_html__('Applying a language will replace current text values. Save changes to keep them.', 'multi-location-product-and-inventory-management') . '</p>
+                </div>';
+        }
+
+        echo '<div class="mulopimfwc-text-action-card mulopimfwc-text-action-card--reset '.(!mulopimfwc_premium_feature() ? 'mulopimfwc_pro_only' : '').'">
+                <div class="mulopimfwc-text-action-card__header">
+                    <div class="mulopimfwc-text-action-card__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="currentColor" d="M12 4a8 8 0 1 1-7.5 11h2.1A6 6 0 1 0 12 6V2l5 4-5 4V6a6 6 0 0 0-5.5 9H4A8 8 0 0 1 12 4z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="mulopimfwc-text-action-title">' . esc_html__('Reset Text', 'multi-location-product-and-inventory-management') . '</p>
+                        <p class="mulopimfwc-text-action-subtitle">' . esc_html__('Restore the original defaults for all text fields.', 'multi-location-product-and-inventory-management') . '</p>
+                    </div>
+                </div>';
+        wp_nonce_field('mulopimfwc_reset_text_management_action', 'mulopimfwc_reset_text_management_nonce');
+        echo '<button '.(!mulopimfwc_premium_feature() ? 'disabled' : '').' type="submit" name="mulopimfwc_reset_text_management" value="1" class="button mulopimfwc-text-reset-button" formaction="' . esc_url(menu_page_url('multi-location-product-and-inventory-management-settings', false)) . '" onclick="return confirm(\'' . esc_js(__('Reset all text fields to their default values? This action cannot be undone.', 'multi-location-product-and-inventory-management')) . '\');">
+                    ' . esc_html__('Reset Text to Defaults', 'multi-location-product-and-inventory-management') . '
+                </button>
+                <p class="mulopimfwc-text-management-intro__note">' . esc_html__('Reset only the Text Management fields to their defaults.', 'multi-location-product-and-inventory-management') . '</p>
+            </div>
+        </div>
+    </div>';
+
+        if (!empty($translation_data)) {
+            echo '<script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const translations = ' . wp_json_encode($translation_data) . ';
+                    window.mulopimfwcTextTranslations = translations;
+                    const locales = translations.locales || {};
+                    const select = document.getElementById("mulopimfwc-text-translate-select");
+                    const apply = document.getElementById("mulopimfwc-text-translate-apply");
+                    if (!select || !apply || !Object.keys(locales).length) {
+                        return;
+                    }
+
+                    function applyTranslation() {
+                        const localeCode = select.value;
+                        if (!localeCode || !locales[localeCode] || !locales[localeCode].values) {
+                            window.alert("' . esc_js(__('Please choose a language first.', 'multi-location-product-and-inventory-management')) . '");
+                            return;
+                        }
+                        const locale = locales[localeCode];
+                        const label = locale.nativeLabel || locale.label || localeCode;
+                        const template = translations.meta && translations.meta.applyConfirm
+                            ? translations.meta.applyConfirm
+                            : "Apply %s translations to all Text Management fields? This will overwrite your current values.";
+                        const message = template.replace("%s", label);
+                        if (!window.confirm(message)) {
+                            return;
+                        }
+
+                        Object.keys(locale.values).forEach(function(key) {
+                            const value = locale.values[key];
+                            const field = document.getElementById(key);
+                            if (field) {
+                                field.value = value;
+                            }
+                            const hidden = document.querySelector(\'[data-manual-hidden=\"true\"][data-manual-for=\"mulopimfwc_display_options[\' + key + \']\"]\');
+                            if (hidden) {
+                                hidden.value = value;
+                            }
+                        });
+
+                        select.value = "";
+                    }
+
+                    apply.addEventListener("click", applyTranslation);
+                    select.addEventListener("change", applyTranslation);
+                });
+            </script>';
+        }
+
+        foreach ($groups as $group) {
+            $title = $group['title'] ?? '';
+            $description = $group['description'] ?? '';
+            $icon = $group['icon'] ?? '';
+            $fields = $group['fields'] ?? [];
+
+            echo '<div class="lwp-settings-section '.(!mulopimfwc_premium_feature() ? 'mulopimfwc_pro_only' : '').'"><div class="lwp-settings-box">';
+            echo '<div class="mulopimfwc-text-group__header">';
+            if (!empty($icon)) {
+                echo '<div class="mulopimfwc-text-group__icon">' . $icon . '</div>';
+            }
+            echo '<div>';
+            echo '<h3 class="mulopimfwc-text-group__title">' . esc_html($title) . '</h3>';
+            if (!empty($description)) {
+                echo '<p class="mulopimfwc-text-group__desc">' . esc_html($description) . '</p>';
+            }
+            echo '</div></div>';
+
+            if (!empty($fields)) {
+                echo '<div class="mulopimfwc-text-fields">';
+                foreach ($fields as $field) {
+                    if (!is_array($field) || empty($field['key'])) {
+                        continue;
+                    }
+                    $this->render_text_management_field($field, $options, $is_manual_mode, $current_template);
+                }
+                echo '</div>';
+            }
+            echo '</div></div>';
+        }
+    }
+
+    private function render_text_management_field(array $field, array $options, bool $is_manual_mode, string $current_template): void
+    {
+        $key = $field['key'];
+        $label = $field['label'] ?? $key;
+        $type = $field['type'] ?? 'text';
+        $rows = isset($field['rows']) ? (int) $field['rows'] : 2;
+        $default = $field['default'] ?? '';
+        $value = isset($options[$key]) ? $options[$key] : $default;
+        if (is_string($value) && trim($value) === '') {
+            $value = $default;
+        }
+
+        $template_only = $field['template_only'] ?? '';
+        $pro_only = !empty($field['pro_only']);
+        $manual_disable = !empty($field['manual_disable']);
+        $pro_locked = $pro_only && function_exists('mulopimfwc_premium_feature') && !mulopimfwc_premium_feature();
+        $manual_locked = $manual_disable && $is_manual_mode;
+        $disabled_attr = ($pro_locked || $manual_locked) ? ' disabled' : '';
+
+        $wrapper_class = 'mulopimfwc-text-field';
+        $wrapper_style = '';
+        if ($template_only === 'default') {
+            $wrapper_class .= ' mulopimfwc-default-template-only';
+            $wrapper_style = ($current_template === 'default') ? '' : ' style="display:none;"';
+        }
+
+        if ($manual_locked) {
+            $this->render_manual_hidden_input($key, $value);
+        }
+
+        $description = $field['description'] ?? '';
+        if ($manual_locked) {
+            $description = $description ? $this->append_manual_disabled_note($description) : ltrim($this->append_manual_disabled_note(''));
+        }
+
+        $tags = [];
+        if (!empty($template_only)) {
+            $tags[] = sprintf(__('Template: %s', 'multi-location-product-and-inventory-management'), ucfirst(str_replace('-', ' ', $template_only)));
+        }
+        if ($pro_only) {
+            $tags[] = __('Pro', 'multi-location-product-and-inventory-management');
+        }
+
+        echo '<div class="' . esc_attr($wrapper_class) . '"' . $wrapper_style . '>';
+        echo '<div class="mulopimfwc-text-field__header">';
+        echo '<label for="' . esc_attr($key) . '">' . esc_html($label) . '</label>';
+        if (!empty($tags)) {
+            echo '<div class="mulopimfwc-text-field__tags">';
+
+            echo '</div>';
+        }
+        echo '</div>';
+
+        if ($pro_locked) {
+            echo '<label class="mulopimfwc_pro_only">';
+        }
+
+        if ($type === 'textarea') {
+            $rows = $rows > 0 ? $rows : 2;
+            echo '<textarea '.(!mulopimfwc_premium_feature() ? 'disabled' : '').' id="' . esc_attr($key) . '" name="mulopimfwc_display_options[' . esc_attr($key) . ']" rows="' . esc_attr($rows) . '"' . $disabled_attr . ' placeholder="' . esc_attr($default) . '">' . esc_textarea($value) . '</textarea>';
+        } else {
+            echo '<input '.(!mulopimfwc_premium_feature() ? 'disabled' : '').' type="text" id="' . esc_attr($key) . '" name="mulopimfwc_display_options[' . esc_attr($key) . ']" value="' . esc_attr($value) . '" class="regular-text"' . $disabled_attr . ' placeholder="' . esc_attr($default) . '">';
+        }
+
+        if ($pro_locked) {
+            echo '</label>';
+        }
+
+        if (!empty($description)) {
+            echo '<p class="description">' . esc_html($description) . '</p>';
+        }
+
+        echo '</div>';
     }
 
     private function get_display_options()

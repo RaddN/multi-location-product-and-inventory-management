@@ -302,6 +302,7 @@
 
 .mulopimfwc_pro_only_blur > * {
   filter: blur(3px);
+  pointer-events: none;
 }
 
 .mulopimfwc_pro_only_blur1 > * {
@@ -324,6 +325,11 @@
 
 .mulopimfwc_pro_only {
   position: relative;
+  pointer-events: none;
+}
+
+.mulopimfwc_pro_only * {
+  pointer-events: none;
 }
 
 .mulopimfwc_switch {
