@@ -434,6 +434,58 @@ function mulopimfwc_is_backorder_allowed($value)
 }
 
 /**
+ * Get the effective backorder mode for a product at a specific location.
+ *
+ * Falls back to the product's native WooCommerce backorder setting when the
+ * location-specific value is not configured.
+ *
+ * @param int|WC_Product $product Product object or ID.
+ * @param int            $location_id Location term ID.
+ * @return string
+ */
+function mulopimfwc_get_effective_location_backorders($product, $location_id)
+{
+    $location_id = absint($location_id);
+    if (!$location_id) {
+        return '';
+    }
+
+    $product = $product instanceof WC_Product
+        ? $product
+        : wc_get_product(absint($product));
+
+    if (!$product) {
+        return '';
+    }
+
+    $location_backorders = get_post_meta($product->get_id(), '_location_backorders_' . $location_id, true);
+    $normalized_location_backorders = mulopimfwc_normalize_backorder_value($location_backorders, 'woocommerce');
+
+    return $normalized_location_backorders !== '' ? $normalized_location_backorders : $product->get_backorders();
+}
+
+/**
+ * Calculate the next location stock value after reducing order stock.
+ *
+ * @param int|WC_Product $product Product object or ID.
+ * @param int            $location_id Location term ID.
+ * @param mixed          $current_stock Current location stock value.
+ * @param int            $quantity Quantity to reduce.
+ * @return int
+ */
+function mulopimfwc_get_reduced_location_stock($product, $location_id, $current_stock, $quantity)
+{
+    $new_stock = (int) $current_stock - (int) $quantity;
+    $effective_backorders = mulopimfwc_get_effective_location_backorders($product, $location_id);
+
+    if (!mulopimfwc_is_backorder_allowed($effective_backorders)) {
+        return max(0, $new_stock);
+    }
+
+    return $new_stock;
+}
+
+/**
  * Get assigned location slugs for a product with request-level caching.
  *
  * @param int $product_id Product ID.
@@ -862,7 +914,8 @@ add_action('woocommerce_reduce_order_stock', function ($order) {
         $current_stock = get_post_meta($target_id, '_location_stock_' . $location_id, true);
 
         if ($current_stock !== '') {
-            $new_stock = max(0, (int)$current_stock - $quantity);
+            $product = wc_get_product($target_id);
+            $new_stock = mulopimfwc_get_reduced_location_stock($product ?: $target_id, $location_id, $current_stock, $quantity);
             update_post_meta($target_id, '_location_stock_' . $location_id, $new_stock);
         }
     }

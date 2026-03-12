@@ -2371,7 +2371,9 @@ if (!function_exists('mulopimfwc_get_values')) {
 
                 $new_stock = get_post_meta($target_id, '_location_stock_' . $new_location_id, true);
                 if ($new_stock !== '') {
-                    update_post_meta($target_id, '_location_stock_' . $new_location_id, max(0, (int) $new_stock - $quantity));
+                    $product = wc_get_product($target_id);
+                    $updated_stock = mulopimfwc_get_reduced_location_stock($product ?: $target_id, $new_location_id, $new_stock, $quantity);
+                    update_post_meta($target_id, '_location_stock_' . $new_location_id, $updated_stock);
                 }
             }
 
