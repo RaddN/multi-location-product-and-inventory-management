@@ -7,9 +7,9 @@
  * Supports multiple display positions and layouts with secure AJAX handling.
  * 
  * @package Multi_Location_Product_Inventory
- * @version 1.0.8
+ * @version 1.0.8.1
  * @author Your Name
- * @since 1.0.8
+ * @since 1.0.8.1
  */
 
 if (!defined('ABSPATH')) {
@@ -26,7 +26,7 @@ class MULOPIMFWC_Product_Location_Selector
     /**
      * Plugin version
      */
-    const VERSION = '1.0.8';
+    const VERSION = '1.0.8.1';
 
     /**
      * Available display positions
@@ -481,19 +481,6 @@ class MULOPIMFWC_Product_Location_Selector
                             </label>
                         </div>
                     <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="mulopimfwc-checkbox-item">
-                        <input
-                            type="radio"
-                            id="location-all-products"
-                            name="mulopimfwc_location"
-                            class="mulopimfwc-location-checkbox"
-                            value="all-products"
-                            <?php checked($current_location, 'all-products'); ?> />
-                        <label for="location-all-products">
-                            <?php esc_html_e('All Products', 'multi-location-product-and-inventory-management'); ?>
-                        </label>
-                    </div>
                 <?php endif; ?>
             </div>
         </div>
