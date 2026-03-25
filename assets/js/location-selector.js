@@ -24,7 +24,33 @@
         }
 
         init() {
+            this.syncSelectorStateFromCookie();
             this.bindEvents();
+        }
+
+        syncSelectorStateFromCookie() {
+            const currentLocation = this.getCurrentStoreLocation();
+
+            if (!currentLocation) {
+                return;
+            }
+
+            const $buttons = $('.mulopimfwc-location-button');
+            if ($buttons.length) {
+                $buttons.removeClass('active');
+                $buttons.filter((index, button) => String($(button).data('location')) === String(currentLocation)).addClass('active');
+            }
+
+            const $radios = $('.mulopimfwc-location-checkbox');
+            if ($radios.length) {
+                $radios.prop('checked', false);
+                $radios.filter((index, radio) => String(radio.value) === String(currentLocation)).prop('checked', true);
+            }
+
+            const $dropdown = $('.mulopimfwc-location-dropdown');
+            if ($dropdown.length) {
+                $dropdown.val(currentLocation);
+            }
         }
 
         bindEvents() {
