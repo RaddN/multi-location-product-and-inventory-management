@@ -1396,7 +1396,7 @@ add_action('wp_footer', function () {
 
             if (is_wp_error($terms) || ! in_array($location_slug, $terms, true)) {
                 // Register a dummy stylesheet to attach inline styles
-                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.9.26');
+                wp_register_style('mulopimfwc-custom-woocommerce-style', false, array(), '1.0.9.5.26');
                 wp_enqueue_style('mulopimfwc-custom-woocommerce-style');
                 wp_add_inline_style('mulopimfwc-custom-woocommerce-style', '.variations_form.cart { display: none; }');
             }
@@ -1907,14 +1907,4 @@ function mulopimfwc_populate_locations_column_in_product_list($column, $post_id)
             }
         }
     }
-}
-
-// hide stock & price column
-add_filter('manage_edit-product_columns', 'mulopimfwc_remove_default_product_columns', 20);
-function mulopimfwc_remove_default_product_columns($columns)
-{
-    // Unset the default stock and price columns
-    unset($columns['is_in_stock']);
-    unset($columns['price']);
-    return $columns;
 }
