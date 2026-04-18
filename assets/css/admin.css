@@ -325,7 +325,6 @@
 
 .mulopimfwc_pro_only {
   position: relative;
-  pointer-events: none;
 }
 
 .mulopimfwc_pro_only * {
@@ -1733,7 +1732,6 @@ input.disabled + .mulopimfwc_slider {
   border-radius: 6px;
   font-size: 14px;
   transition: all 0.2s;
-  background: #ffffff;
 }
 
 .manage-form-row input[type="number"]:focus,

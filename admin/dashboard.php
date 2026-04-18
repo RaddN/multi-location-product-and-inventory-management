@@ -115,7 +115,6 @@ class MULOPIMFWC_Dashboard
 
         // Calculate totals efficiently
         $total_products = $this->get_total_products_count();
-        $total_investment = $this->calculate_total_investment_efficiently();
         $total_revenue = wp_rand(1000, 100000);
 
         wp_localize_script('lwp-dashboard-js', 'mulopimfwc_DashboardData', [
@@ -307,7 +306,7 @@ class MULOPIMFWC_Dashboard
                             </div>
 
                         </div>
-                        <div class="lwp-stat-item">
+                        <div class="lwp-stat-item mulopimfwc_pro_only mulopimfwc_pro_only_blur">
                             <div class="lwp-stat-item-icon" style="background-color: #cffafe;">
 
                                 <svg class="svg-inline--fa fa-money-bag" aria-hidden="true" data-prefix="fas" data-icon="money-bag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18">
@@ -325,7 +324,7 @@ class MULOPIMFWC_Dashboard
                             </div>
                             <div>
                                 <span class="lwp-stat-label"><?php echo esc_html__('Total Investment', 'multi-location-product-and-inventory-management'); ?></span>
-                                <span class="lwp-stat-value"><?php echo wp_kses_post(wc_price($total_investment)); ?></span>
+                                <span class="lwp-stat-value"><?php echo wp_kses_post(wc_price(rand(0, 10000))); ?></span>
 
                             </div>
 
@@ -832,72 +831,6 @@ class MULOPIMFWC_Dashboard
         );
 
         return (int) $wpdb->get_var($query);
-    }
-
-    /**
-     * Calculate total investment efficiently
-     */
-    private function calculate_total_investment_efficiently()
-    {
-        // Use caching to prevent recalculation
-        $cache_key = 'mulopimfwc_total_investment_v3';
-        $cached_value = get_transient($cache_key);
-
-        if ($cached_value !== false) {
-            return $cached_value;
-        }
-
-        global $wpdb;
-
-        // Calculate investment as purchase_price * purchase_quantity.
-        // Include simple/external products and variable variations.
-        // Skip any row where either value is missing or <= 0.
-        $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT p.ID,
-                    MAX(CASE WHEN pm.meta_key = %s THEN pm.meta_value END) AS purchase_price,
-                    MAX(CASE WHEN pm.meta_key = %s THEN pm.meta_value END) AS purchase_quantity
-             FROM {$wpdb->posts} p
-             INNER JOIN {$wpdb->postmeta} pm
-                ON pm.post_id = p.ID
-               AND pm.meta_key IN (%s, %s)
-             WHERE p.post_type IN (%s, %s)
-               AND p.post_status IN (%s, %s)
-             GROUP BY p.ID",
-            '_purchase_price',
-            '_purchase_quantity',
-            '_purchase_price',
-            '_purchase_quantity',
-            'product',
-            'product_variation',
-            'publish',
-            'private'
-        ));
-
-        $total_investment = 0.0;
-        if (!empty($rows)) {
-            foreach ($rows as $row) {
-                $price_raw = isset($row->purchase_price) ? $row->purchase_price : '';
-                $qty_raw = isset($row->purchase_quantity) ? $row->purchase_quantity : '';
-
-                if ($price_raw === '' || $qty_raw === '') {
-                    continue;
-                }
-
-                $price = (float) wc_format_decimal($price_raw);
-                $quantity = (float) wc_format_decimal($qty_raw);
-
-                if ($price <= 0 || $quantity <= 0) {
-                    continue;
-                }
-
-                $total_investment += ($price * $quantity);
-            }
-        }
-
-        // Cache for 1 hour
-        set_transient($cache_key, $total_investment, HOUR_IN_SECONDS);
-
-        return $total_investment;
     }
 
     /**

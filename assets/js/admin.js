@@ -1175,14 +1175,9 @@ jQuery(document).ready(function ($) {
         htmlParts.push('</select>');
         htmlParts.push('</div>');
         
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
         htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
         htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_price]" value="' + (variation.default.purchase_price || '') + '" min="0" step="0.01">');
-        htmlParts.push('</div>');
-
-        htmlParts.push('<div class="manage-form-row">');
-        htmlParts.push('<label>Purchase Quantity:</label>');
-        htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_quantity]" value="' + (variation.default.purchase_quantity || '') + '" min="0" step="1">');
         htmlParts.push('</div>');
         
         htmlParts.push('</form>');
@@ -1201,14 +1196,14 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<input type="number" name="variations[' + variationId + '][locations][' + location.id + '][stock]" value="' + (location.stock || '') + '" min="0" step="1">');
         htmlParts.push('</div>');
         
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
         htmlParts.push('<label>Regular Price (' + currencySymbol + '):</label>');
-        htmlParts.push('<input type="number" name="variations[' + variationId + '][locations][' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
+        htmlParts.push('<input disabled type="number" name="variations[' + variationId + '][locations][' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
         htmlParts.push('</div>');
         
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
         htmlParts.push('<label>Sale Price (' + currencySymbol + '):</label>');
-        htmlParts.push('<input type="number" name="variations[' + variationId + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
+        htmlParts.push('<input disabled type="number" name="variations[' + variationId + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
         htmlParts.push('</div>');
         
         htmlParts.push('<div class="manage-form-row variation-manage-stock-location-row variation-manage-stock-location-row-' + variationId + '"' + stockRowStyle + '>');
@@ -1425,17 +1420,9 @@ jQuery(document).ready(function ($) {
         
         // Purchase Price - not for grouped products
         if (!isGrouped && !isVariable) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
             htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
             htmlParts.push('<input type="number" name="default[purchase_price]" value="' + (data.default.purchase_price || '') + '" min="0" step="0.01">');
-            htmlParts.push('</div>');
-        }
-        
-        // Purchase Quantity - not for grouped or variable products
-        if (!isGrouped && !isVariable) {
-            htmlParts.push('<div class="manage-form-row">');
-            htmlParts.push('<label>Purchase Quantity:</label>');
-            htmlParts.push('<input type="number" name="default[purchase_quantity]" value="' + (data.default.purchase_quantity || '') + '" min="0" step="1">');
             htmlParts.push('</div>');
         }
         
@@ -1470,17 +1457,17 @@ jQuery(document).ready(function ($) {
         
         // Regular Price - not for grouped products
         if (!isGrouped) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
             htmlParts.push('<label>Regular Price (' + currencySymbol + '):</label>');
-            htmlParts.push('<input type="number" name="locations[' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
+            htmlParts.push('<input disabled type="number" name="locations[' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
             htmlParts.push('</div>');
         }
         
         // Sale Price - not for grouped products
         if (!isGrouped) {
-            htmlParts.push('<div class="manage-form-row">');
+            htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
             htmlParts.push('<label>Sale Price (' + currencySymbol + '):</label>');
-            htmlParts.push('<input type="number" name="locations[' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
+            htmlParts.push('<input disabled type="number" name="locations[' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
             htmlParts.push('</div>');
         }
         
@@ -1575,13 +1562,9 @@ jQuery(document).ready(function ($) {
         htmlParts.push('<option value="yes"' + (variation.default.backorders === 'yes' ? ' selected' : '') + '>Allow</option>');
         htmlParts.push('</select>');
         htmlParts.push('</div>');
-        htmlParts.push('<div class="manage-form-row">');
+        htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
         htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
         htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_price]" value="' + (variation.default.purchase_price || '') + '" min="0" step="0.01">');
-        htmlParts.push('</div>');
-        htmlParts.push('<div class="manage-form-row">');
-        htmlParts.push('<label>Purchase Quantity:</label>');
-        htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_quantity]" value="' + (variation.default.purchase_quantity || '') + '" min="0" step="1">');
         htmlParts.push('</div>');
         htmlParts.push('</div>');
 
@@ -1596,13 +1579,13 @@ jQuery(document).ready(function ($) {
                 htmlParts.push('<label>Stock Quantity:</label>');
                 htmlParts.push('<input type="number" name="variations[' + variation.id + '][locations][' + location.id + '][stock]" value="' + (location.stock || '') + '" min="0" step="1">');
                 htmlParts.push('</div>');
-                htmlParts.push('<div class="manage-form-row">');
+                htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
                 htmlParts.push('<label>Regular Price (' + currencySymbol + '):</label>');
-                htmlParts.push('<input type="number" name="variations[' + variation.id + '][locations][' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
+                htmlParts.push('<input disabled type="number" name="variations[' + variation.id + '][locations][' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
                 htmlParts.push('</div>');
-                htmlParts.push('<div class="manage-form-row">');
+                htmlParts.push('<div class="manage-form-row mulopimfwc_pro_only">');
                 htmlParts.push('<label>Sale Price (' + currencySymbol + '):</label>');
-                htmlParts.push('<input type="number" name="variations[' + variation.id + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
+                htmlParts.push('<input disabled type="number" name="variations[' + variation.id + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
                 htmlParts.push('</div>');
                 htmlParts.push('<div class="manage-form-row">');
                 htmlParts.push('<label>Backorders:</label>');
@@ -2546,13 +2529,9 @@ jQuery(document).ready(function ($) {
         htmlParts.push('</select>');
         htmlParts.push('</div>');
         if (!quickEditIsVariable) {
-            htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+            htmlParts.push('<div class="mulopimfwc-quick-edit-row mulopimfwc_pro_only">');
             htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
             htmlParts.push('<input type="number" name="default[purchase_price]" value="' + (data.default.purchase_price || '') + '" min="0" step="0.01">');
-            htmlParts.push('</div>');
-            htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
-            htmlParts.push('<label>Purchase Quantity:</label>');
-            htmlParts.push('<input type="number" name="default[purchase_quantity]" value="' + (data.default.purchase_quantity || '') + '" min="0" step="1">');
             htmlParts.push('</div>');
         }
         htmlParts.push('</div>');
@@ -2568,13 +2547,13 @@ jQuery(document).ready(function ($) {
                 htmlParts.push('<label>Stock Quantity:</label>');
                 htmlParts.push('<input type="number" name="locations[' + location.id + '][stock]" value="' + (location.stock || '') + '" min="0" step="1">');
                 htmlParts.push('</div>');
-                htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+                htmlParts.push('<div class="mulopimfwc-quick-edit-row mulopimfwc_pro_only">');
                 htmlParts.push('<label>Regular Price (' + currencySymbol + '):</label>');
-                htmlParts.push('<input type="number" name="locations[' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
+                htmlParts.push('<input disabled type="number" name="locations[' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
                 htmlParts.push('</div>');
-                htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+                htmlParts.push('<div class="mulopimfwc-quick-edit-row mulopimfwc_pro_only">');
                 htmlParts.push('<label>Sale Price (' + currencySymbol + '):</label>');
-                htmlParts.push('<input type="number" name="locations[' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
+                htmlParts.push('<input disabled type="number" name="locations[' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
                 htmlParts.push('</div>');
                 htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
                 htmlParts.push('<label>Backorders:</label>');
@@ -2621,13 +2600,9 @@ jQuery(document).ready(function ($) {
                 htmlParts.push('<option value="yes"' + (variation.default.backorders === 'yes' ? ' selected' : '') + '>Allow</option>');
                 htmlParts.push('</select>');
                 htmlParts.push('</div>');
-                htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+                htmlParts.push('<div class="mulopimfwc-quick-edit-row mulopimfwc_pro_only">');
                 htmlParts.push('<label>Purchase Price (' + currencySymbol + '):</label>');
                 htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_price]" value="' + (variation.default.purchase_price || '') + '" min="0" step="0.01">');
-                htmlParts.push('</div>');
-                htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
-                htmlParts.push('<label>Purchase Quantity:</label>');
-                htmlParts.push('<input type="number" name="variations[' + variation.id + '][default][purchase_quantity]" value="' + (variation.default.purchase_quantity || '') + '" min="0" step="1">');
                 htmlParts.push('</div>');
                 htmlParts.push('</div>');
 
@@ -2642,13 +2617,13 @@ jQuery(document).ready(function ($) {
                         htmlParts.push('<label>Stock Quantity:</label>');
                         htmlParts.push('<input type="number" name="variations[' + variation.id + '][locations][' + location.id + '][stock]" value="' + (location.stock || '') + '" min="0" step="1">');
                         htmlParts.push('</div>');
-                        htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+                        htmlParts.push('<div class="mulopimfwc-quick-edit-row mulopimfwc_pro_only">');
                         htmlParts.push('<label>Regular Price (' + currencySymbol + '):</label>');
-                        htmlParts.push('<input type="number" name="variations[' + variation.id + '][locations][' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
+                        htmlParts.push('<input disabled type="number" name="variations[' + variation.id + '][locations][' + location.id + '][regular_price]" value="' + (location.regular_price || '') + '" min="0" step="0.01">');
                         htmlParts.push('</div>');
-                        htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
+                        htmlParts.push('<div class="mulopimfwc-quick-edit-row mulopimfwc_pro_only">');
                         htmlParts.push('<label>Sale Price (' + currencySymbol + '):</label>');
-                        htmlParts.push('<input type="number" name="variations[' + variation.id + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
+                        htmlParts.push('<input disabled type="number" name="variations[' + variation.id + '][locations][' + location.id + '][sale_price]" value="' + (location.sale_price || '') + '" min="0" step="0.01">');
                         htmlParts.push('</div>');
                         htmlParts.push('<div class="mulopimfwc-quick-edit-row">');
                         htmlParts.push('<label>Backorders:</label>');

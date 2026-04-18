@@ -26,8 +26,37 @@ class mulopimfwc_Stock_Central
         <div class="wrap mlsctock-cenral-main">
             <h1 style="display: none !important;"><?php echo esc_html__('Location Wise Products Stock Management', 'multi-location-product-and-inventory-management'); ?></h1>
             <div class="mlsctock-cenral-header">
-                <h1><?php echo esc_html__('Location Wise Products Stock Management', 'multi-location-product-and-inventory-management'); ?></h1>
-                <p><?php echo esc_html__('Manage stock levels and prices for each product by location.', 'multi-location-product-and-inventory-management'); ?></p>
+                <div class="mlsctock-cenral-header-copy">
+                    <h1><?php echo esc_html__('Location Wise Products Stock Management', 'multi-location-product-and-inventory-management-pro'); ?></h1>
+                    <p><?php echo esc_html__('Manage stock levels and prices for each product by location.', 'multi-location-product-and-inventory-management-pro'); ?></p>
+                </div>
+                <div class="mulopimfwc-header-actions">
+                    <div class="mulopimfwc-import-export-wrap mulopimfwc_pro_only">
+                        <button type="button" class="button button-secondary mulopimfwc-stock-central-import-export-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="mulopimfwc-import-export-menu">
+                            <span class="mulopimfwc-import-export-toggle-icon" aria-hidden="true">
+                                <svg width="24" height="24" viewBox="0 0 0.72 0.72" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                    <path fill-rule="evenodd" d="M.594.558.592.561l-.09.09-.003.002-.004.002-.002.001L.49.657.487.658.483.659H.474L.47.658.467.657.464.655.461.653.458.651l-.09-.09a.03.03 0 0 1 .04-.045l.003.002.039.04V.27A.03.03 0 0 1 .476.24H.48a.03.03 0 0 1 .03.03v.288L.549.519a.03.03 0 0 1 .04-.002l.003.002a.03.03 0 0 1 .005.037zM.129.159l.09-.09.003-.003.003-.002.003-.002.003-.001L.234.06h.01l.004.001.002.001.003.001.002.001.002.002.002.002.001.001.09.09.002.003a.03.03 0 0 1 0 .037L.35.202.347.204a.03.03 0 0 1-.037 0L.307.202.27.162V.45a.03.03 0 0 1-.026.03H.236A.03.03 0 0 1 .21.454V.162L.171.201.168.203A.03.03 0 0 1 .126.162z" />
+                                </svg>
+                            </span>
+                            <span class="mulopimfwc-import-export-toggle-label"><?php echo esc_html__('Import Export', 'multi-location-product-and-inventory-management-pro'); ?></span>
+                            <span class="mulopimfwc-import-export-toggle-chevron" aria-hidden="true">
+                                <svg viewBox="0 0 20 20" focusable="false" role="img">
+                                    <path d="M5.5 7.5 10 12l4.5-4.5 1.2 1.2L10 14.4 4.3 8.7l1.2-1.2Z" fill="currentColor"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="mulopimfwc-view-switch-wrap mulopimfwc_pro_only">
+                        <div class="mulopimfwc-view-switch <?php echo $is_classic_mode ? 'is-classic' : 'is-modern'; ?>" role="group" aria-label="<?php echo esc_attr__('Stock Central View Mode', 'multi-location-product-and-inventory-management-pro'); ?>">
+                            <a href="<?php echo esc_url($modern_url); ?>" class="mulopimfwc-view-switch-option <?php echo $is_classic_mode ? '' : 'is-active'; ?>">
+                                <?php echo esc_html__('Modern', 'multi-location-product-and-inventory-management-pro'); ?>
+                            </a>
+                            <a href="<?php echo esc_url($classic_url); ?>" class="mulopimfwc-view-switch-option <?php echo $is_classic_mode ? 'is-active' : ''; ?>">
+                                <?php echo esc_html__('Classic', 'multi-location-product-and-inventory-management-pro'); ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <form method="get" id="stock-central-form">
@@ -50,6 +79,17 @@ class mulopimfwc_Stock_Central
                 padding: 25px 25px;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 16px;
+                box-sizing: border-box;
+                width: 100%;
+            }
+
+            .mlsctock-cenral-header-copy {
+                flex: 1 1 auto;
+                min-width: 240px;
             }
 
             .mlsctock-cenral-header h1 {
@@ -57,12 +97,925 @@ class mulopimfwc_Stock_Central
                 font-weight: 700;
                 font-size: 30px;
                 padding: 0;
+                margin: 0;
             }
 
             .mlsctock-cenral-header p {
                 color: #f3e8ff;
                 font-size: 18px;
                 margin: 6px 0px 0px;
+            }
+
+            .mulopimfwc-view-switch-wrap {
+                flex: 0 0 auto;
+                padding-top: 0;
+            }
+
+            .mulopimfwc-header-actions {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-left: auto;
+            }
+
+            .mulopimfwc-import-export-wrap {
+                position: relative;
+                padding-top: 0;
+            }
+
+            .mulopimfwc-stock-central-import-export-toggle {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                min-height: 40px !important;
+                padding: 0 14px !important;
+                border-radius: 999px !important;
+                border-color: rgba(255, 255, 255, 0.44) !important;
+                color: #fff !important;
+                background: rgb(15 23 42 / 6%) !important;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(15, 23, 42, 0.15);
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                line-height: 1 !important;
+                text-shadow: 0 1px 0 rgba(15, 23, 42, 0.25);
+                transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+            }
+
+            .mulopimfwc-stock-central-import-export-toggle:hover {
+                background: rgba(15, 23, 42, 0.44) !important;
+                border-color: rgba(255, 255, 255, 0.62) !important;
+                transform: translateY(-1px);
+            }
+
+            .mulopimfwc-stock-central-import-export-toggle:focus-visible {
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.42), 0 0 0 4px rgba(37, 99, 235, 0.5);
+            }
+
+            .mulopimfwc-stock-central-import-export-toggle.is-open {
+                background: rgba(15, 23, 42, 0.5) !important;
+                border-color: rgba(255, 255, 255, 0.72) !important;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 8px rgba(15, 23, 42, 0.22);
+            }
+
+            .mulopimfwc-import-export-toggle-label {
+                letter-spacing: 0.01em;
+            }
+
+            .mulopimfwc-import-export-toggle-icon svg,
+            .mulopimfwc-import-export-toggle-chevron svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+            }
+
+            .mulopimfwc-import-export-toggle-chevron {
+                transition: transform 0.16s ease;
+            }
+
+            .mulopimfwc-stock-central-import-export-toggle.is-open .mulopimfwc-import-export-toggle-chevron {
+                transform: rotate(180deg);
+            }
+
+            .mulopimfwc-import-export-menu {
+                position: absolute;
+                right: 0;
+                top: calc(100% + 8px);
+                min-width: 410px;
+                background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+                border: 1px solid #dbe3ee;
+                border-radius: 14px;
+                box-shadow: 0 16px 34px rgba(15, 23, 42, 0.2);
+                padding: 16px;
+                z-index: 100;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                max-height: 70vh;
+                overflow: auto;
+            }
+
+            .mulopimfwc-import-export-menu[hidden] {
+                display: none !important;
+            }
+
+            .mlsctock-cenral-header .mulopimfwc-import-export-menu p {
+                margin: 0;
+                font-size: 12px;
+                line-height: 1.4;
+                color: #4b5563;
+            }
+
+            .mlsctock-cenral-header .mulopimfwc-import-export-menu .mulopimfwc-ie-panel-copy {
+                color: #4b5563 !important;
+            }
+
+            .mulopimfwc-ie-menu-header {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                border: 1px solid #e5e7eb;
+                background: #f8fafc;
+                border-radius: 10px;
+                padding: 10px 11px;
+            }
+
+            .mulopimfwc-ie-menu-title {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+            }
+
+            .mulopimfwc-ie-menu-title-icon {
+                width: 22px;
+                height: 22px;
+                border-radius: 7px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: #dbeafe;
+                color: #2563eb;
+                flex: 0 0 auto;
+            }
+
+            .mulopimfwc-ie-menu-title-icon svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+            }
+
+            .mulopimfwc-ie-menu-header strong {
+                font-size: 13px;
+                color: #111827;
+            }
+
+            .mulopimfwc-ie-menu-header>span {
+                font-size: 12px;
+                color: #6b7280;
+                line-height: 1.35;
+            }
+
+            .mulopimfwc-ie-tabs {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                background: #f3f4f6;
+                border: 1px solid #e5e7eb;
+                border-radius: 999px;
+                padding: 3px;
+                gap: 4px;
+            }
+
+            .mulopimfwc-ie-tab {
+                border: 0;
+                background: transparent;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #4b5563;
+                line-height: 1;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-height: 32px;
+                cursor: pointer;
+                transition: all 0.16s ease;
+            }
+
+            .mulopimfwc-ie-tab-icon svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+            }
+
+            .mulopimfwc-ie-tab.is-active {
+                background: #ffffff;
+                color: #111827;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+            }
+
+            .mulopimfwc-ie-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 9px;
+            }
+
+            .mulopimfwc-ie-panel[hidden] {
+                display: none !important;
+            }
+
+            .mulopimfwc-ie-panel-copy {
+                margin: 0;
+                color: #4b5563;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+
+            .mulopimfwc-ie-checklist {
+                margin: 0;
+                padding: 0;
+                color: #374151;
+                font-size: 12px;
+                line-height: 1.5;
+                list-style: none;
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .mulopimfwc-ie-checklist li {
+                display: flex;
+                align-items: flex-start;
+                gap: 7px;
+            }
+
+            .mulopimfwc-ie-check-icon {
+                width: 16px;
+                height: 16px;
+                border-radius: 999px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: #dcfce7;
+                color: #16a34a;
+                margin-top: 1px;
+                flex: 0 0 auto;
+            }
+
+            .mulopimfwc-ie-check-icon svg {
+                width: 11px;
+                height: 11px;
+                display: block;
+            }
+
+            .mulopimfwc-ie-field-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .mulopimfwc-ie-field-label-icon svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+                color: #2563eb;
+            }
+
+            .mulopimfwc-ie-panel .button-primary {
+                width: 100%;
+                justify-content: center;
+                display: inline-flex !important;
+                align-items: center;
+                gap: 7px;
+                border-radius: 8px;
+            }
+
+            .mulopimfwc-stock-central-dropzone {
+                border: 1px dashed #93c5fd;
+                background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+                border-radius: 10px;
+                padding: 14px 12px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 4px;
+                color: #1f2937;
+                cursor: pointer;
+                transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+            }
+
+            .mulopimfwc-stock-central-dropzone:focus {
+                outline: none;
+                border-color: #2563eb;
+                box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
+            }
+
+            .mulopimfwc-stock-central-dropzone.is-dragover {
+                border-color: #2563eb;
+                background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+                box-shadow: 0 6px 16px rgba(37, 99, 235, 0.18);
+            }
+
+            .mulopimfwc-stock-central-dropzone-icon svg {
+                width: 24px;
+                height: 24px;
+                display: block;
+                color: #2563eb;
+            }
+
+            .mulopimfwc-stock-central-dropzone strong {
+                font-size: 12px;
+                color: #111827;
+            }
+
+            .mulopimfwc-stock-central-dropzone span {
+                font-size: 11px;
+                color: #6b7280;
+            }
+
+            .mulopimfwc-stock-central-dropzone-file {
+                font-style: normal;
+                font-size: 11px;
+                color: #1d4ed8;
+                margin-top: 4px;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .mulopimfwc-import-export-menu label {
+                font-size: 12px;
+                font-weight: 600;
+                color: #374151;
+            }
+
+            .mulopimfwc-import-export-menu input[type="text"],
+            .mulopimfwc-import-export-menu select {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .mulopimfwc-import-export-check {
+                font-weight: 500 !important;
+                font-size: 12px !important;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                color: #4b5563 !important;
+            }
+
+            .mulopimfwc-import-export-check input[type="checkbox"] {
+                margin: 0 !important;
+            }
+
+            .mulopimfwc-ie-option-icon svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+                color: #2563eb;
+            }
+
+            .mulopimfwc-ie-action-icon svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+            }
+
+            .mulopimfwc-stock-central-import-export-status {
+                margin: 10px 25px 0;
+                padding: 8px 10px;
+                border-radius: 6px;
+                background: #eef2ff;
+                border: 1px solid #c7d2fe;
+                color: #3730a3;
+                display: none;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                font-size: 12px;
+            }
+
+            .mulopimfwc-stock-central-import-export-status-message {
+                min-width: 0;
+                flex: 1 1 auto;
+            }
+
+            .mulopimfwc-stock-central-active-job-meta {
+                flex: 0 0 auto;
+                color: #4338ca;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.01em;
+                white-space: nowrap;
+            }
+
+            .mulopimfwc-stock-central-active-job-meta[hidden] {
+                display: none !important;
+            }
+
+            .mulopimfwc-stock-central-status-actions {
+                flex: 0 0 auto;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .mulopimfwc-stock-central-view-log {
+                font-size: 12px;
+                font-weight: 600;
+                color: #1e40af;
+                text-decoration: none;
+            }
+
+            .mulopimfwc-stock-central-view-log[hidden] {
+                display: none !important;
+            }
+
+            .mulopimfwc-stock-central-pause-job,
+            .mulopimfwc-stock-central-resume-job,
+            .mulopimfwc-stock-central-cancel-job {
+                font-size: 12px;
+                font-weight: 600;
+                text-decoration: none;
+            }
+
+            .mulopimfwc-stock-central-pause-job[hidden],
+            .mulopimfwc-stock-central-resume-job[hidden],
+            .mulopimfwc-stock-central-cancel-job[hidden] {
+                display: none !important;
+            }
+
+            .mulopimfwc-stock-central-cancel-job {
+                color: #b91c1c;
+            }
+
+            .mulopimfwc-stock-central-import-export-status.is-error {
+                background: #fef2f2;
+                border-color: #fecaca;
+                color: #991b1b;
+            }
+
+            .mulopimfwc-stock-central-import-export-status.is-error .mulopimfwc-stock-central-view-log {
+                color: #7f1d1d;
+            }
+
+            .mulopimfwc-stock-central-import-export-status.is-error .mulopimfwc-stock-central-active-job-meta,
+            .mulopimfwc-stock-central-import-export-status.is-error .mulopimfwc-stock-central-pause-job,
+            .mulopimfwc-stock-central-import-export-status.is-error .mulopimfwc-stock-central-resume-job,
+            .mulopimfwc-stock-central-import-export-status.is-error .mulopimfwc-stock-central-cancel-job {
+                color: #7f1d1d;
+            }
+
+            .mulopimfwc-stock-central-import-export-status.is-success {
+                background: #ecfdf5;
+                border-color: #bbf7d0;
+                color: #065f46;
+            }
+
+            .mulopimfwc-stock-central-import-export-status.is-success .mulopimfwc-stock-central-view-log {
+                color: #065f46;
+            }
+
+            .mulopimfwc-stock-central-import-export-status.is-success .mulopimfwc-stock-central-active-job-meta,
+            .mulopimfwc-stock-central-import-export-status.is-success .mulopimfwc-stock-central-pause-job,
+            .mulopimfwc-stock-central-import-export-status.is-success .mulopimfwc-stock-central-resume-job,
+            .mulopimfwc-stock-central-import-export-status.is-success .mulopimfwc-stock-central-cancel-job {
+                color: #065f46;
+            }
+
+            .mulopimfwc-stock-central-active-jobs {
+                margin: 8px 25px 0;
+                border: 1px solid #dbe4ff;
+                border-radius: 8px;
+                background: #ffffff;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+                overflow: hidden;
+            }
+
+            .mulopimfwc-stock-central-active-jobs[hidden] {
+                display: none !important;
+            }
+
+            .mulopimfwc-stock-central-active-jobs-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 10px 12px;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f8fafc;
+            }
+
+            .mulopimfwc-stock-central-active-jobs-header strong {
+                color: #0f172a;
+                font-size: 13px;
+            }
+
+            .mulopimfwc-stock-central-active-jobs-meta {
+                color: #475569;
+                font-size: 12px;
+            }
+
+            .mulopimfwc-stock-central-active-jobs-list {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .mulopimfwc-stock-central-active-job-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 12px;
+                border-top: 1px solid #eef2ff;
+            }
+
+            .mulopimfwc-stock-central-active-job-row:first-child {
+                border-top: none;
+            }
+
+            .mulopimfwc-stock-central-active-job-row.is-selected {
+                background: #eff6ff;
+            }
+
+            .mulopimfwc-stock-central-active-job-main {
+                flex: 1 1 auto;
+                min-width: 0;
+                padding: 0;
+                border: none;
+                background: transparent;
+                text-align: left;
+                cursor: pointer;
+            }
+
+            .mulopimfwc-stock-central-active-job-main:focus-visible {
+                outline: 2px solid #2563eb;
+                outline-offset: 2px;
+                border-radius: 6px;
+            }
+
+            .mulopimfwc-stock-central-active-job-topline {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 4px;
+            }
+
+            .mulopimfwc-stock-central-active-job-type,
+            .mulopimfwc-stock-central-active-job-status {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 20px;
+                padding: 0 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.01em;
+            }
+
+            .mulopimfwc-stock-central-active-job-type.is-import {
+                background: #dcfce7;
+                color: #166534;
+            }
+
+            .mulopimfwc-stock-central-active-job-type.is-export {
+                background: #dbeafe;
+                color: #1d4ed8;
+            }
+
+            .mulopimfwc-stock-central-active-job-status {
+                background: #f1f5f9;
+                color: #334155;
+            }
+
+            .mulopimfwc-stock-central-active-job-status.is-paused {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            .mulopimfwc-stock-central-active-job-status.is-running,
+            .mulopimfwc-stock-central-active-job-status.is-uploading,
+            .mulopimfwc-stock-central-active-job-status.is-queued,
+            .mulopimfwc-stock-central-active-job-status.is-uploaded,
+            .mulopimfwc-stock-central-active-job-status.is-awaiting_confirmation {
+                background: #dbeafe;
+                color: #1d4ed8;
+            }
+
+            .mulopimfwc-stock-central-active-job-id {
+                color: #0f172a;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.01em;
+            }
+
+            .mulopimfwc-stock-central-active-job-summary {
+                color: #475569;
+                font-size: 12px;
+                line-height: 1.45;
+                word-break: break-word;
+            }
+
+            .mulopimfwc-stock-central-active-job-actions {
+                flex: 0 0 auto;
+                display: inline-flex;
+                align-items: center;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+
+            .mulopimfwc-stock-central-active-job-actions .button-link {
+                font-size: 12px;
+                font-weight: 600;
+                text-decoration: none;
+            }
+
+            .mulopimfwc-stock-central-active-job-actions .mulopimfwc-stock-central-queue-cancel {
+                color: #b91c1c;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-panel {
+                margin: 8px 25px 0;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                background: #ffffff;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+                overflow: hidden;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-panel[hidden] {
+                display: none !important;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 10px;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f8fafc;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-header strong {
+                font-size: 12px;
+                color: #111827;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-actions {
+                display: inline-flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-actions .button-link {
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            .mulopimfwc-stock-central-import-export-log-list {
+                max-height: 220px;
+                overflow: auto;
+                padding: 8px 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                font-size: 12px;
+                color: #374151;
+            }
+
+            .mulopimfwc-stock-central-log-entry {
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+                line-height: 1.35;
+            }
+
+            .mulopimfwc-stock-central-log-time {
+                color: #6b7280;
+                flex: 0 0 auto;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .mulopimfwc-stock-central-log-text {
+                flex: 1 1 auto;
+                min-width: 0;
+                word-break: break-word;
+            }
+
+            .mulopimfwc-stock-central-log-entry.is-error .mulopimfwc-stock-central-log-text {
+                color: #991b1b;
+            }
+
+            .mulopimfwc-stock-central-log-entry.is-success .mulopimfwc-stock-central-log-text {
+                color: #065f46;
+            }
+
+            .mulopimfwc-stock-central-log-empty {
+                color: #6b7280;
+                font-style: italic;
+            }
+
+            .mulopimfwc-view-switch {
+                position: relative;
+                display: inline-grid;
+                grid-template-columns: 1fr 1fr;
+                min-width: 200px;
+                padding: 3px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.16);
+                border: 1px solid rgba(255, 255, 255, 0.32);
+                backdrop-filter: blur(2px);
+                transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+            }
+
+            .mulopimfwc-view-switch:hover {
+                background: rgba(255, 255, 255, 0.24);
+                border-color: rgba(255, 255, 255, 0.55);
+                box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
+                transform: translateY(-1px);
+            }
+
+            .mulopimfwc-view-switch::after {
+                content: "";
+                position: absolute;
+                top: 3px;
+                bottom: 3px;
+                left: 3px;
+                width: calc(50% - 3px);
+                border-radius: 999px;
+                background: #ffffff;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+                transition: transform 0.18s ease;
+                pointer-events: none;
+            }
+
+            .mulopimfwc-view-switch.is-classic::after {
+                transform: translateX(100%);
+            }
+
+            .mulopimfwc-view-switch-option {
+                position: relative;
+                z-index: 1;
+                text-align: center;
+                padding: 8px 14px;
+                font-size: 13px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.85);
+                text-decoration: none;
+                border-radius: 999px;
+                transition: color 0.18s ease, background 0.18s ease;
+            }
+
+            .mulopimfwc-view-switch-option:hover {
+                color: #ffffff;
+            }
+
+            .mulopimfwc-view-switch-option:not(.is-active):hover {
+                background: rgba(255, 255, 255, 0.14);
+            }
+
+            .mulopimfwc-view-switch-option:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+            }
+
+            .mulopimfwc-view-switch-option.is-active {
+                color: #111827;
+            }
+
+            .mulopimfwc-classic-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                margin-bottom: 16px;
+                padding: 12px 14px;
+                border: 1px solid #d6d9df;
+                background: #f8f9fb;
+                border-radius: 6px;
+                position: sticky;
+                top: 32px;
+                z-index: 20;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            }
+
+            .mulopimfwc-classic-toolbar-left {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                min-width: 220px;
+            }
+
+            .mulopimfwc-classic-toolbar-title {
+                font-size: 13px;
+                font-weight: 700;
+                color: #111827;
+                line-height: 1.3;
+            }
+
+            .mulopimfwc-classic-toolbar-hint {
+                font-size: 12px;
+                color: #6b7280;
+                line-height: 1.35;
+            }
+
+            .mulopimfwc-classic-toolbar-right {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                flex-direction: row-reverse;
+            }
+
+            #mulopimfwc-classic-save-progress {
+                color: #1f2937;
+                font-weight: 500;
+                min-height: 18px;
+            }
+
+            #mulopimfwc-classic-save-spinner {
+                float: none;
+                margin: 0;
+                visibility: hidden;
+            }
+
+            #mulopimfwc-classic-save-spinner.is-active {
+                visibility: visible;
+            }
+
+            .mulopimfwc-classic-save-failures {
+                margin: -6px 0 14px;
+                padding: 10px 12px;
+                border: 1px solid #f5d18a;
+                background: #fffbeb;
+                border-radius: 6px;
+                color: #92400e;
+                font-size: 12px;
+                line-height: 1.5;
+            }
+
+            .mulopimfwc-classic-save-failures strong {
+                color: #7c2d12;
+            }
+
+            .mulopimfwc-classic-save-failure-list {
+                margin: 6px 0 0 18px;
+                max-height: 168px;
+                overflow: auto;
+            }
+
+            .mulopimfwc-classic-save-failure-product {
+                font-weight: 600;
+                color: #7c2d12;
+            }
+
+            @media (max-width: 782px) {
+                .mlsctock-cenral-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .mulopimfwc-view-switch-wrap {
+                    width: 100%;
+                    display: flex;
+                    justify-content: flex-end;
+                }
+
+                .mulopimfwc-header-actions {
+                    width: 100%;
+                    margin-left: 0;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .mulopimfwc-import-export-wrap {
+                    padding-top: 0;
+                }
+
+                .mulopimfwc-import-export-menu {
+                    left: 0;
+                    right: auto;
+                    min-width: min(360px, calc(100vw - 64px));
+                }
+
+                .mulopimfwc-stock-central-active-jobs-header,
+                .mulopimfwc-stock-central-active-job-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .mulopimfwc-stock-central-active-job-actions {
+                    justify-content: flex-start;
+                }
+
+                .mulopimfwc-stock-central-import-export-status {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .mulopimfwc-stock-central-status-actions {
+                    width: 100%;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+
+                .mulopimfwc-classic-toolbar {
+                    top: 46px;
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .mulopimfwc-classic-toolbar-right {
+                    width: 100%;
+                    justify-content: flex-start;
+                }
             }
 
             .mlsctock-cenral-main form {
@@ -112,45 +1065,49 @@ class mulopimfwc_Stock_Central
                 font-weight: 500;
             }
 
-            .mlsctock-cenral-main form .column-title .mulopimfwc-product-meta {
-                margin-top: 4px;
-                color: #646970;
-                font-size: 13px;
+            .mlsctock-cenral-main .mulopimfwc-product-id {
+                color: #6b7280;
+                font-weight: 400;
+            }
+
+            .mlsctock-cenral-main .mulopimfwc-product-status {
+                display: inline-flex;
+                align-items: center;
+                margin-left: 8px;
+                padding: 2px 8px;
+                border-radius: 999px;
+                border: 1px solid #cbd5e1;
+                background: #f8fafc;
+                color: #334155;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: capitalize;
                 line-height: 1.4;
             }
 
-            .mlsctock-cenral-main form .column-title .mulopimfwc-product-id {
-                margin-right: 6px;
+            .mlsctock-cenral-main .mulopimfwc-product-status-draft,
+            .mlsctock-cenral-main .mulopimfwc-product-status-auto-draft {
+                background: #fffbeb;
+                border-color: #fde68a;
+                color: #92400e;
             }
 
-            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status {
-                display: inline-block;
-                padding: 1px 8px;
-                border: 1px solid #c3c4c7;
-                border-radius: 999px;
-                background: #f6f7f7;
-                color: #50575e;
-                font-size: 12px;
-                line-height: 1.5;
-                vertical-align: middle;
+            .mlsctock-cenral-main .mulopimfwc-product-status-pending {
+                background: #eff6ff;
+                border-color: #bfdbfe;
+                color: #1d4ed8;
             }
 
-            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status.status-private {
-                border-color: #72aee6;
-                background: #f0f6fc;
-                color: #135e96;
+            .mlsctock-cenral-main .mulopimfwc-product-status-private {
+                background: #f3f4f6;
+                border-color: #d1d5db;
+                color: #374151;
             }
 
-            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status.status-pending {
-                border-color: #dba617;
-                background: #fcf9e8;
-                color: #735c0f;
-            }
-
-            .mlsctock-cenral-main form .column-title .mulopimfwc-product-status.status-draft {
-                border-color: #8c8f94;
-                background: #f0f0f1;
-                color: #50575e;
+            .mlsctock-cenral-main .mulopimfwc-product-status-future {
+                background: #ecfdf5;
+                border-color: #a7f3d0;
+                color: #065f46;
             }
 
             .mlsctock-cenral-main form .deactivate-location {
@@ -321,137 +1278,484 @@ class mulopimfwc_Stock_Central
                 white-space: nowrap;
             }
 
-            .mlsctock-cenral-main form .alignleft.actions.bulk-actions-section select {
-                min-width: 180px;
+            .view-mode-classic thead th {
+                font-size: 13px !important;
             }
 
             /* Bulk actions notice */
             .mlsctock-cenral-main .notice {
                 margin: 15px 0;
             }
+
+            .mlsctock-cenral-main.view-mode-classic {
+                border-color: #cfd6dc;
+                background-color: #f3f4f6;
+            }
+
+            .mlsctock-cenral-main.view-mode-classic .mlsctock-cenral-header {
+                background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            }
+
+            .mlsctock-cenral-main.view-mode-classic form {
+                background: #ffffff;
+            }
+
+            .view-mode-classic .check-column {
+                width: 2% !important;
+            }
+
+            .view-mode-classic .column-actions {
+                width: 5%;
+            }
+
+            .view-mode-classic .column-title {
+                width: 10%;
+            }
+
+            .view-mode-classic .column-classic_manage_stock,
+            .view-mode-classic .column-classic_purchase {
+                width: 12%;
+            }
+
+            .mlsctock-cenral-main .bulkactions {
+                display: flex;
+            }
+
+            .view-mode-classic .column-classic_default {
+                width: 14%;
+            }
+
+            .view-mode-classic .column-classic_location_wise {
+                width: 27%;
+            }
+
+            .mulopimfwc-classic-editor {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .mulopimfwc-classic-section {
+                border: 1px solid #dde2e8;
+                border-radius: 6px;
+                padding: 10px;
+                background: #fbfcfd;
+                margin-top: 10px;
+            }
+
+            td .mulopimfwc-classic-section:first-child {
+                margin-top: 0;
+            }
+
+            .mulopimfwc-classic-section h4 {
+                margin: 0 0 10px;
+                font-size: 13px;
+                color: #1f2937;
+            }
+
+            .mulopimfwc-classic-section-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 8px;
+                flex-wrap: wrap;
+            }
+
+            .mulopimfwc-classic-add-location-wrap {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-left: auto;
+            }
+
+            .mulopimfwc-classic-add-location-wrap select {
+                min-width: 180px;
+            }
+
+            .mulopimfwc-classic-add-location-wrap select:disabled,
+            .mulopimfwc-classic-add-location-wrap .mulopimfwc-classic-add-location-btn:disabled {
+                cursor: not-allowed;
+                opacity: 0.7;
+            }
+
+            .mulopimfwc-classic-add-location-empty-state {
+                margin: 2px 0 0;
+                flex: 1 1 100%;
+                font-size: 12px;
+                color: #6b7280;
+            }
+
+            .mulopimfwc-classic-add-location-empty-state a {
+                color: #1d4ed8;
+                text-decoration: none;
+            }
+
+            .mulopimfwc-classic-add-location-empty-state a:hover {
+                text-decoration: underline;
+            }
+
+            .mulopimfwc-classic-add-location-empty-state.is-hidden {
+                display: none;
+            }
+
+            .mulopimfwc-classic-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 8px 10px;
+            }
+
+            .mulopimfwc-classic-grid label {
+                display: block;
+                font-size: 11px;
+                font-weight: 600;
+                color: #4b5563;
+                margin-bottom: 4px;
+            }
+
+            .mulopimfwc-classic-checkbox-wrap {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12px;
+                color: #1f2937;
+                font-weight: 600;
+                margin-bottom: 0;
+            }
+
+            .mulopimfwc-classic-checkbox-wrap input[type="checkbox"] {
+                margin: 0;
+            }
+
+            .mulopimfwc-classic-variation-manage-list {
+                display: grid;
+                gap: 8px;
+            }
+
+            .mulopimfwc-classic-variation-manage-item {
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                padding: 8px 10px;
+                background: #ffffff;
+            }
+
+            .mulopimfwc-classic-variation-manage-title {
+                font-weight: 600;
+                color: #1f2937;
+            }
+
+            .mulopimfwc-classic-grid input:not([type="checkbox"]),
+            .mulopimfwc-classic-grid select,
+            .mulopimfwc-classic-location-table input,
+            .mulopimfwc-classic-location-table select {
+                width: 100%;
+                min-height: 30px;
+                font-size: 12px;
+            }
+
+            .mulopimfwc-classic-price-input-wrap {
+                position: relative;
+                display: block;
+            }
+
+            .mulopimfwc-classic-price-input-wrap .mulopimfwc-classic-number {
+                padding-right: 10px;
+            }
+
+            .mulopimfwc-classic-price-suffix {
+                position: absolute;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 11px;
+                line-height: 1;
+                color: #6b7280;
+                pointer-events: none;
+                white-space: nowrap;
+            }
+
+            .mulopimfwc-classic-location-table th,
+            .mulopimfwc-classic-location-table td {
+                padding: 6px !important;
+                vertical-align: middle;
+                font-size: 12px;
+            }
+
+            .mulopimfwc-classic-location-label {
+                font-weight: 600;
+                color: #111827;
+            }
+
+            .mulopimfwc-classic-manage-stock-disabled {
+                border: 1px solid #f5c2c7;
+                background: #fff5f5;
+                border-radius: 6px;
+                padding: 10px 12px;
+                color: #7f1d1d;
+                line-height: 1.45;
+            }
+
+            .mulopimfwc-classic-manage-stock-disabled p {
+                margin: 0 0 6px;
+            }
+
+            .mulopimfwc-classic-manage-stock-disabled p:last-child {
+                margin-bottom: 0;
+            }
+
+            .mulopimfwc-classic-manage-stock-disabled a {
+                color: #1d4ed8;
+                word-break: break-all;
+            }
+
+            .mulopimfwc-classic-no-locations-row td {
+                text-align: center;
+                color: #6b7280;
+                font-style: italic;
+            }
+
+            .mulopimfwc-classic-variation {
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                background: #fff;
+                margin-bottom: 10px;
+            }
+
+            .mulopimfwc-classic-variation summary {
+                cursor: pointer;
+                padding: 9px 10px;
+                font-weight: 600;
+                color: #1f2937;
+                border-bottom: 1px solid #edf0f3;
+            }
+
+            .mulopimfwc-classic-variation[open] summary {
+                background: #f8fafc;
+            }
+
+            .mulopimfwc-classic-variation .mulopimfwc-classic-grid {
+                margin: 10px;
+            }
+
+            .mulopimfwc-classic-actions {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .mulopimfwc-classic-reset-row,
+            .mulopimfwc-classic-save-row {
+                min-width: 34px;
+                height: 32px;
+                line-height: 1;
+                padding: 0;
+                font-size: 18px;
+            }
+
+            .mulopimfwc-classic-product-row.is-dirty .mulopimfwc-classic-save-row {
+                box-shadow: 0 0 0 1px #2563eb;
+            }
+
+            .mulopimfwc-classic-row-status {
+                font-size: 11px;
+                color: #6b7280;
+                min-width: 60px;
+            }
+
+            .mulopimfwc-classic-row-status.is-success {
+                color: #166534;
+            }
+
+            .mulopimfwc-classic-row-status.is-error {
+                color: #b91c1c;
+            }
+
+            .mulopimfwc-classic-validation-error {
+                border-color: #dc2626 !important;
+                box-shadow: 0 0 0 1px #dc2626 !important;
+                background: #fef2f2 !important;
+            }
+
+            .mulopimfwc-classic-error-cell {
+                position: relative;
+            }
+
+            .mulopimfwc-classic-error-cell::after {
+                content: attr(data-error);
+                position: absolute;
+                left: 50%;
+                bottom: calc(100% + 10px);
+                transform: translateX(-50%) translateY(4px);
+                background: #111827;
+                color: #fff;
+                font-size: 11px;
+                line-height: 1.35;
+                padding: 7px 9px;
+                border-radius: 6px;
+                box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+                max-width: 250px;
+                min-width: 140px;
+                text-align: left;
+                white-space: normal;
+                z-index: 9999;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+            }
+
+            .mulopimfwc-classic-error-cell::before {
+                content: "";
+                position: absolute;
+                left: 50%;
+                bottom: calc(100% + 4px);
+                transform: translateX(-50%);
+                border-width: 6px 6px 0 6px;
+                border-style: solid;
+                border-color: #111827 transparent transparent transparent;
+                z-index: 9998;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.16s ease, visibility 0.16s ease;
+            }
+
+            .mulopimfwc-classic-error-cell:hover::after,
+            .mulopimfwc-classic-error-cell:focus-within::after,
+            .mulopimfwc-classic-error-cell:hover::before,
+            .mulopimfwc-classic-error-cell:focus-within::before {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mulopimfwc-classic-error-cell:hover::after,
+            .mulopimfwc-classic-error-cell:focus-within::after {
+                transform: translateX(-50%) translateY(0);
+            }
         </style>
 
         <script>
-        (function($) {
-            $(document).ready(function() {
-                // Initialize accordions - first item expanded
-                $('.location-stock-container, .location-price-container, .gross-profit-container').each(function() {
-                    var $container = $(this);
-                    var $accordionItems = $container.find('.accordion-item');
-                    
-                    // First item should be expanded
-                    $accordionItems.first().addClass('accordion-expanded').find('.accordion-content').addClass('accordion-open');
-                    $accordionItems.first().find('.accordion-icon').text('−');
-                });
+            (function($) {
+                $(document).ready(function() {
+                    // Initialize accordions - first item expanded
+                    $('.location-stock-container, .location-price-container, .gross-profit-container').each(function() {
+                        var $container = $(this);
+                        var $accordionItems = $container.find('.accordion-item');
 
-                // Handle accordion toggle
-                $(document).on('click', '.accordion-header', function(e) {
-                    e.preventDefault();
-                    var $header = $(this);
-                    var $item = $header.closest('.accordion-item');
-                    var $content = $header.siblings('.accordion-content');
-                    var $icon = $header.find('.accordion-icon');
-                    var targetId = $header.data('accordion-target');
+                        // First item should be expanded
+                        $accordionItems.first().addClass('accordion-expanded').find('.accordion-content').addClass('accordion-open');
+                        $accordionItems.first().find('.accordion-icon').text('−');
+                    });
 
-                    // Toggle expanded class
-                    $item.toggleClass('accordion-expanded');
-                    $content.toggleClass('accordion-open');
+                    // Handle accordion toggle
+                    $(document).on('click', '.accordion-header', function(e) {
+                        e.preventDefault();
+                        var $header = $(this);
+                        var $item = $header.closest('.accordion-item');
+                        var $content = $header.siblings('.accordion-content');
+                        var $icon = $header.find('.accordion-icon');
+                        var targetId = $header.data('accordion-target');
 
-                    // Update icon
-                    if ($item.hasClass('accordion-expanded')) {
-                        $icon.text('−');
-                    } else {
-                        $icon.text('+');
-                    }
-                });
+                        // Toggle expanded class
+                        $item.toggleClass('accordion-expanded');
+                        $content.toggleClass('accordion-open');
 
-                // Handle form submission - update URL on submit
-                var $form = $('#stock-central-form');
-                
-                // Update URL when form is submitted
-                function updateURL() {
-                    var formData = $form.serialize();
-                    var url = window.location.pathname + '?' + formData;
-                    window.history.pushState({path: url}, '', url);
-                }
-
-                // Handle form submission (Filter button or search)
-                $form.on('submit', function(e) {
-                    updateURL();
-                    // Form will submit normally
-                });
-
-                // Handle bulk action selection - validate but don't submit
-                $('select[name="action"], select[name="action2"]').on('change', function() {
-                    var action = $(this).val();
-                    // Just show/hide location selector, don't submit
-                    toggleBulkLocationSelector();
-                });
-
-                // Handle bulk action Apply button click
-                $('input#doaction, input#doaction2').on('click', function(e) {
-                    var $button = $(this);
-                    var action = $('select[name="action"]').val();
-                    var action2 = $('select[name="action2"]').val();
-                    var currentAction = (action && action !== '-1') ? action : ((action2 && action2 !== '-1') ? action2 : '');
-                    
-                    if (currentAction === 'bulk_assign_location' || currentAction === 'bulk_remove_location') {
-                        if (!$('#bulk-location-id').val()) {
-                            e.preventDefault();
-                            alert('<?php echo esc_js(__('Please select a location first', 'multi-location-product-and-inventory-management')); ?>');
-                            return false;
-                        }
-                    }
-                    // If validation passes, form will submit normally
-                });
-
-                // Show/hide bulk location selector based on selected bulk action
-                function toggleBulkLocationSelector() {
-                    var action = $('select[name="action"]').val();
-                    var action2 = $('select[name="action2"]').val();
-                    var currentAction = (action && action !== '-1') ? action : ((action2 && action2 !== '-1') ? action2 : '');
-                    
-                    if (currentAction === 'bulk_assign_location' || currentAction === 'bulk_remove_location') {
-                        $('.bulk-actions-section').fadeIn(200);
-                    } else {
-                        $('.bulk-actions-section').fadeOut(200);
-                    }
-                }
-                
-                // Move bulk actions section to be right after bulk actions dropdown
-                function positionBulkActionsSection() {
-                    var $bulkActions = $('.tablenav.top .bulkactions, .tablenav.top .alignleft.actions.bulkactions');
-                    var $bulkSection = $('.bulk-actions-section');
-                    
-                    if ($bulkActions.length && $bulkSection.length) {
-                        // Find the bulk actions container
-                        var $bulkContainer = $bulkActions.closest('.alignleft, .bulkactions').parent();
-                        if ($bulkContainer.length) {
-                            $bulkSection.detach().insertAfter($bulkContainer);
+                        // Update icon
+                        if ($item.hasClass('accordion-expanded')) {
+                            $icon.text('−');
                         } else {
-                            $bulkSection.detach().insertAfter($bulkActions);
+                            $icon.text('+');
+                        }
+                    });
+
+                    // Handle form submission - update URL on submit
+                    var $form = $('#stock-central-form');
+
+                    // Update URL when form is submitted
+                    function updateURL() {
+                        var formData = $form.serialize();
+                        var url = window.location.pathname + '?' + formData;
+                        window.history.pushState({
+                            path: url
+                        }, '', url);
+                    }
+
+                    // Handle form submission (Filter button or search)
+                    $form.on('submit', function(e) {
+                        updateURL();
+                        // Form will submit normally
+                    });
+
+                    // Handle bulk action selection - validate but don't submit
+                    $('select[name="action"], select[name="action2"]').on('change', function() {
+                        var action = $(this).val();
+                        // Just show/hide location selector, don't submit
+                        toggleBulkLocationSelector();
+                    });
+
+                    // Handle bulk action Apply button click
+                    $('input#doaction, input#doaction2').on('click', function(e) {
+                        var $button = $(this);
+                        var action = $('select[name="action"]').val();
+                        var action2 = $('select[name="action2"]').val();
+                        var currentAction = (action && action !== '-1') ? action : ((action2 && action2 !== '-1') ? action2 : '');
+
+                        if (currentAction === 'bulk_assign_location' || currentAction === 'bulk_remove_location') {
+                            if (!$('#bulk-location-id').val()) {
+                                e.preventDefault();
+                                alert('<?php echo esc_js(__('Please select a location first', 'multi-location-product-and-inventory-management')); ?>');
+                                return false;
+                            }
+                        }
+                        // If validation passes, form will submit normally
+                    });
+
+                    // Show/hide bulk location selector based on selected bulk action
+                    function toggleBulkLocationSelector() {
+                        var action = $('select[name="action"]').val();
+                        var action2 = $('select[name="action2"]').val();
+                        var currentAction = (action && action !== '-1') ? action : ((action2 && action2 !== '-1') ? action2 : '');
+
+                        if (currentAction === 'bulk_assign_location' || currentAction === 'bulk_remove_location') {
+                            $('.bulk-actions-section').fadeIn(200);
+                        } else {
+                            $('.bulk-actions-section').fadeOut(200);
                         }
                     }
-                }
 
-                // Position on load and after any DOM changes
-                positionBulkActionsSection();
-                
-                // Also position after table is ready
-                setTimeout(positionBulkActionsSection, 100);
+                    // Move bulk actions section to be right after bulk actions dropdown
+                    function positionBulkActionsSection() {
+                        var $bulkActions = $('.tablenav.top .bulkactions, .tablenav.top .alignleft.actions.bulkactions');
+                        var $bulkSection = $('.bulk-actions-section');
 
-                // Initial state - hide by default
-                $('.bulk-actions-section').hide();
-                toggleBulkLocationSelector();
+                        if ($bulkActions.length && $bulkSection.length) {
+                            // Find the bulk actions container
+                            var $bulkContainer = $bulkActions.closest('.alignleft, .bulkactions').parent();
+                            if ($bulkContainer.length) {
+                                $bulkSection.detach().insertAfter($bulkContainer);
+                            } else {
+                                $bulkSection.detach().insertAfter($bulkActions);
+                            }
+                        }
+                    }
 
-                // Restore filters from URL on page load
-                var urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('s') || urlParams.has('filter-by-location') || urlParams.has('filter-by-category') || 
-                    urlParams.has('filter-by-type') || urlParams.has('filter-by-stock-status') || urlParams.has('filter-by-brand')) {
-                    // Filters are already in URL, form will auto-populate
-                }
-            });
-        })(jQuery);
+                    // Position on load and after any DOM changes
+                    positionBulkActionsSection();
+
+                    // Also position after table is ready
+                    setTimeout(positionBulkActionsSection, 100);
+
+                    // Initial state - hide by default
+                    $('.bulk-actions-section').hide();
+                    toggleBulkLocationSelector();
+
+                    // Restore filters from URL on page load
+                    var urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.has('s') || urlParams.has('filter-by-location') || urlParams.has('filter-by-category') ||
+                        urlParams.has('filter-by-type') || urlParams.has('filter-by-stock-status') || urlParams.has('filter-by-brand')) {
+                        // Filters are already in URL, form will auto-populate
+                    }
+                });
+            })(jQuery);
         </script>
 <?php
     }

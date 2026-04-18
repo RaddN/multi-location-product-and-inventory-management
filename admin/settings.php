@@ -172,7 +172,7 @@ General Settings', 'multi-location-product-and-inventory-management'),
             'enable_location_price',
             __('Enable Location Pricing', 'multi-location-product-and-inventory-management'),
             function () {
-                $this->render_advance_checkbox("enable_location_price", __("Enable or disable location-specific pricing.", 'multi-location-product-and-inventory-management'));
+                $this->render_advance_checkbox("pro", __("Enable or disable location-specific pricing.", 'multi-location-product-and-inventory-management'), true, false);
             },
             'lwp-general-settings',
             'location_stock_general_section'
@@ -3519,11 +3519,6 @@ Out of Stock Product Display', 'multi-location-product-and-inventory-management'
         // Handle enable_location_stock option
         if (isset($input['enable_location_stock'])) {
             $sanitized['enable_location_stock'] = sanitize_text_field($input['enable_location_stock']);
-        }
-
-        // Handle enable_location_price option
-        if (isset($input['enable_location_price'])) {
-            $sanitized['enable_location_price'] = sanitize_text_field($input['enable_location_price']);
         }
 
         // Handle enable_location_backorder option

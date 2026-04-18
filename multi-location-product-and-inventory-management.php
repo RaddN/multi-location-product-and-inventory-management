@@ -60,7 +60,6 @@ if (!function_exists('mulopimfwc_get_values')) {
         $mulopimfwc_options = get_option('mulopimfwc_display_options') ?:
             [
                 'enable_location_stock' => 'on',
-                'enable_location_price' => 'on',
                 'enable_location_backorder' => 'on',
                 'enable_all_locations' => 'on',
                 'location_change_notification' => 'on',
@@ -2332,7 +2331,6 @@ if (!function_exists('mulopimfwc_get_values')) {
                 ? $mulopimfwc_options
                 : get_option('mulopimfwc_display_options', []);
             $enable_location_stock = isset($options['enable_location_stock']) && $options['enable_location_stock'] === 'on';
-            $enable_location_price = isset($options['enable_location_price']) && $options['enable_location_price'] === 'on';
 
             $new_location_id = (int) $new_location_term->term_id;
 
@@ -2379,32 +2377,6 @@ if (!function_exists('mulopimfwc_get_values')) {
 
             $old_price = (float) $item->get_subtotal();
             $new_price = $old_price;
-
-            if ($enable_location_price) {
-                $location_sale_price = get_post_meta($target_id, '_location_sale_price_' . $new_location_id, true);
-                $location_regular_price = get_post_meta($target_id, '_location_regular_price_' . $new_location_id, true);
-
-                if ($location_sale_price !== '' && $location_sale_price !== null) {
-                    $new_price_per_unit = (float) $location_sale_price;
-                } elseif ($location_regular_price !== '' && $location_regular_price !== null) {
-                    $new_price_per_unit = (float) $location_regular_price;
-                } else {
-                    $product_obj = wc_get_product($target_id);
-                    if ($product_obj) {
-                        $sale_price = $product_obj->get_sale_price();
-                        $regular_price = $product_obj->get_regular_price();
-                        $new_price_per_unit = $sale_price !== '' ? (float) $sale_price : (float) $regular_price;
-                    } else {
-                        $new_price_per_unit = $quantity > 0 ? ((float) $old_price / (float) $quantity) : 0.0;
-                    }
-                }
-
-                $new_subtotal = $new_price_per_unit * (float) $quantity;
-                $item->set_subtotal($new_subtotal);
-                $item->set_total($new_subtotal);
-                $item->update_meta_data('_price', $new_price_per_unit);
-                $new_price = $new_subtotal;
-            }
 
             $item->update_meta_data('_mulopimfwc_location', $new_location_slug);
             $item->save();
@@ -2462,14 +2434,6 @@ if (!function_exists('mulopimfwc_get_values')) {
                 $new_location_term->name
             );
 
-            if ($enable_location_price && (string) $old_price !== (string) $new_price) {
-                $note_message .= sprintf(
-                    __(' | Price updated from %s to %s', 'multi-location-product-and-inventory-management'),
-                    wc_price($old_price),
-                    wc_price($new_price)
-                );
-            }
-
             if ($order_location_updated) {
                 $order_location_term = get_term_by('slug', $order_location_slug, 'mulopimfwc_store_location');
                 $order_location_name = ($order_location_term && !is_wp_error($order_location_term)) ? $order_location_term->name : $order_location_slug;
@@ -2484,7 +2448,7 @@ if (!function_exists('mulopimfwc_get_values')) {
             wp_send_json_success([
                 'message' => __('Location and price updated successfully', 'multi-location-product-and-inventory-management'),
                 'location_name' => $new_location_term->name,
-                'price_changed' => $enable_location_price && (string) $old_price !== (string) $new_price,
+                'price_changed' => false,
                 'order_location_updated' => $order_location_updated,
                 'order_location_slug' => $order_location_slug,
                 'old_price' => $old_price,

@@ -269,6 +269,81 @@ class MULOPIMFWC_Admin
             </div>
         <?php endif; ?>
 
+        <?php
+        $currencies = $this->get_currency_options();
+        $currency_positions = $this->get_currency_position_options();
+        $default_currency_code = $this->get_default_currency_code();
+        $default_currency_label = isset($currencies[$default_currency_code])
+            ? ($default_currency_code . ' - ' . $currencies[$default_currency_code])
+            : $default_currency_code;
+        $default_currency_position = $this->get_default_currency_position();
+        $rate_mode_options = $this->get_location_rate_mode_options();
+        ?>
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="location_currency"><?php esc_html_e('Currency', 'multi-location-product-and-inventory-management-pro'); ?></label>
+            <select disabled name="location_currency" id="location_currency" class="mulopimfwc-select2" style="min-width: 320px;" data-placeholder="<?php esc_attr_e('Search currency...', 'multi-location-product-and-inventory-management-pro'); ?>">
+                <option value="" selected><?php echo esc_html(sprintf(/* translators: %s: default currency label (e.g. "USD - US Dollar") */ __('Default Value (%s) - No Changes', 'multi-location-product-and-inventory-management-pro'), $default_currency_label)); ?></option>
+                <?php foreach ($currencies as $currency_code => $currency_name): ?>
+                    <?php
+                    $currency_code = strtoupper((string) $currency_code);
+                    $currency_symbol = $this->get_unfiltered_currency_symbol($currency_code);
+                    $currency_label = $currency_code . ' - ' . $currency_name;
+                    if ($currency_symbol !== '') {
+                        $currency_label .= ' (' . $currency_symbol . ')';
+                    }
+                    ?>
+                    <option value="<?php echo esc_attr($currency_code); ?>"><?php echo esc_html($currency_label); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php esc_html_e('Select currency for this location. ', 'multi-location-product-and-inventory-management-pro'); ?></p>
+        </div>
+
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="location_currency_position"><?php esc_html_e('Currency Position', 'multi-location-product-and-inventory-management-pro'); ?></label>
+            <select disabled name="location_currency_position" id="location_currency_position" style="min-width: 220px;">
+                <option value=""><?php echo esc_html(sprintf(/* translators: %s: currency position label */ __('Default (%s)', 'multi-location-product-and-inventory-management-pro'), $currency_positions[$default_currency_position])); ?></option>
+                <?php foreach ($currency_positions as $position_key => $position_label): ?>
+                    <option value="<?php echo esc_attr($position_key); ?>"><?php echo esc_html($position_label); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description"><?php esc_html_e('Set where currency symbol appears for this location.', 'multi-location-product-and-inventory-management-pro'); ?></p>
+        </div>
+
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="location_currency_rate"><?php esc_html_e('Rate', 'multi-location-product-and-inventory-management-pro'); ?></label>
+            <div class="mulopimfwc-currency-rate-wrap" style="display:flex;align-items:center;gap:8px;max-width:430px;">
+                <input disabled
+                    type="number"
+                    name="location_currency_rate"
+                    id="location_currency_rate"
+                    value="1"
+                    min="0.000001"
+                    step="0.000001"
+                    class="mulopimfwc-currency-rate-value"
+                    style="width:140px;" />
+                <select disabled name="location_currency_rate_mode" id="location_currency_rate_mode" class="mulopimfwc-currency-rate-mode" style="width:110px;">
+                    <?php foreach ($rate_mode_options as $mode_key => $mode_label): ?>
+                        <option value="<?php echo esc_attr($mode_key); ?>" <?php selected($mode_key, 'auto'); ?>><?php echo esc_html($mode_label); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" class="button mulopimfwc-sync-rate" title="<?php esc_attr_e('Sync latest rate', 'multi-location-product-and-inventory-management-pro'); ?>" aria-label="<?php esc_attr_e('Sync latest rate', 'multi-location-product-and-inventory-management-pro'); ?>" style="min-width:36px;padding:0 8px;">
+                    <span class="dashicons dashicons-update" style="margin-top:3px;"></span>
+                </button>
+            </div>
+            <p class="description">
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: %s: WooCommerce default currency code */
+                        __('Rate from WooCommerce currency (%s) to selected currency. Use Sync when Auto is selected.', 'multi-location-product-and-inventory-management-pro'),
+                        $default_currency_code
+                    )
+                );
+                ?>
+            </p>
+            <p class="description mulopimfwc-currency-rate-status" style="display:none;"></p>
+        </div>
+
         <!-- Tax Class -->
         <?php $tax_classes = [
             '' => __('Standard', 'multi-location-product-and-inventory-management'),
@@ -290,7 +365,405 @@ class MULOPIMFWC_Admin
             <input type="number" name="display_order" id="display_order" value="" min="0" step="1" />
             <p class="description"><?php _e('Enter a number to control the order of this location (smaller numbers appear first)', 'multi-location-product-and-inventory-management'); ?></p>
         </div>
+
+        <div class="form-field mulopimfwc_pro_only">
+            <label for="is_active"><?php esc_html_e('Status', 'multi-location-product-and-inventory-management-pro'); ?></label>
+            <select disabled name="is_active" id="is_active">
+                <option value="1" selected><?php esc_html_e('Active', 'multi-location-product-and-inventory-management-pro'); ?></option>
+                <option value="0"><?php esc_html_e('Inactive', 'multi-location-product-and-inventory-management-pro'); ?></option>
+            </select>
+            <p class="description"><?php esc_html_e('Set whether this location is active or inactive', 'multi-location-product-and-inventory-management-pro'); ?></p>
+        </div>
     <?php
+    }
+    private function get_currency_options()
+    {
+        if (!function_exists('get_woocommerce_currencies')) {
+            return array();
+        }
+
+        return (array) get_woocommerce_currencies();
+    }
+
+    private function get_unfiltered_currency_symbol(string $currency_code): string
+    {
+        $currency_code = strtoupper(trim($currency_code));
+        if ($currency_code === '') {
+            return '';
+        }
+
+        if (function_exists('mulopimfwc_get_unfiltered_currency_symbol')) {
+            return (string) mulopimfwc_get_unfiltered_currency_symbol($currency_code);
+        }
+
+        return $currency_code;
+    }
+
+    private function get_currency_position_options()
+    {
+        return array(
+            'left' => __('Left', 'multi-location-product-and-inventory-management-pro'),
+            'right' => __('Right', 'multi-location-product-and-inventory-management-pro'),
+            'left_space' => __('Left With Space', 'multi-location-product-and-inventory-management-pro'),
+            'right_space' => __('Right With Space', 'multi-location-product-and-inventory-management-pro'),
+        );
+    }
+    private function get_raw_option_value(string $option_name): string
+    {
+        global $wpdb;
+
+        if (!isset($wpdb) || !is_object($wpdb) || empty($wpdb->options)) {
+            return '';
+        }
+
+        $raw_value = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+                $option_name
+            )
+        );
+
+        if (!is_string($raw_value)) {
+            return '';
+        }
+
+        $unserialized = maybe_unserialize($raw_value);
+        return is_string($unserialized) ? trim($unserialized) : '';
+    }
+
+    private function get_default_currency_code(): string
+    {
+        // Use raw DB option first so location-wise currency filters do not alter the base store currency.
+        $currency = strtoupper($this->get_raw_option_value('woocommerce_currency'));
+
+        if ($currency === '') {
+            $currency = strtoupper(trim((string) get_option('woocommerce_currency', '')));
+        }
+
+        if ($currency === '' && function_exists('get_woocommerce_currency')) {
+            $currency = strtoupper(trim((string) get_woocommerce_currency()));
+        }
+
+        $currency_options = $this->get_currency_options();
+        if ($currency !== '' && !empty($currency_options) && !isset($currency_options[$currency])) {
+            $currency = '';
+        }
+
+        return $currency !== '' ? $currency : 'USD';
+    }
+
+    private function get_default_currency_position(): string
+    {
+        $default_position = sanitize_key($this->get_raw_option_value('woocommerce_currency_pos'));
+        if ($default_position === '') {
+            $default_position = sanitize_key((string) get_option('woocommerce_currency_pos', ''));
+        }
+
+        $positions = $this->get_currency_position_options();
+
+        return isset($positions[$default_position]) ? $default_position : 'left';
+    }
+    private function get_location_rate_mode_options(): array
+    {
+        return array(
+            'auto' => __('Auto', 'multi-location-product-and-inventory-management-pro'),
+            'fixed' => __('Fixed', 'multi-location-product-and-inventory-management-pro'),
+        );
+    }
+
+    private function normalize_location_rate_mode($mode): string
+    {
+        $normalized = sanitize_key((string) $mode);
+        $allowed_modes = array_keys($this->get_location_rate_mode_options());
+
+        return in_array($normalized, $allowed_modes, true) ? $normalized : 'auto';
+    }
+
+    private function format_location_currency_rate_input($rate): string
+    {
+        if (!is_numeric($rate)) {
+            return '';
+        }
+
+        $rate_value = (float) $rate;
+        if ($rate_value <= 0) {
+            return '';
+        }
+
+        $formatted = number_format($rate_value, 6, '.', '');
+        $formatted = rtrim(rtrim($formatted, '0'), '.');
+
+        return $formatted !== '' ? $formatted : '';
+    }
+
+    private function get_effective_location_currency_settings(int $term_id): array
+    {
+        $currencies = $this->get_currency_options();
+
+        $currency = $this->get_default_currency_code();
+        $configured_currency = strtoupper(trim((string) get_term_meta($term_id, 'location_currency', true)));
+        if ($configured_currency !== '' && isset($currencies[$configured_currency])) {
+            $currency = $configured_currency;
+        }
+
+        $position = $this->get_default_currency_position();
+        $configured_position = sanitize_key((string) get_term_meta($term_id, 'location_currency_position', true));
+        if (in_array($configured_position, array_keys($this->get_currency_position_options()), true)) {
+            $position = $configured_position;
+        }
+
+        $symbol = $this->get_unfiltered_currency_symbol($currency);
+
+        return array(
+            'currency' => $currency,
+            'position' => $position,
+            'symbol' => $symbol,
+        );
+    }
+
+    private function get_location_currency_rate_value_for_term(int $term_id): string
+    {
+        $rate = $this->format_location_currency_rate_input(get_term_meta($term_id, 'location_currency_rate', true));
+
+        return $rate !== '' ? $rate : '1';
+    }
+
+    private function parse_location_currency_rate($raw_rate): ?string
+    {
+        $normalized = str_replace(',', '.', sanitize_text_field((string) $raw_rate));
+        if (!is_numeric($normalized)) {
+            return null;
+        }
+
+        $rate_value = (float) $normalized;
+        if ($rate_value <= 0) {
+            return null;
+        }
+
+        $formatted = $this->format_location_currency_rate_input($rate_value);
+        return $formatted !== '' ? $formatted : null;
+    }
+
+    private function get_location_rate_table_payload(int $term_id): array
+    {
+        $currencies = $this->get_currency_options();
+        $configured_currency = strtoupper(trim((string) get_term_meta($term_id, 'location_currency', true)));
+        $currency_selected = ($configured_currency !== '' && isset($currencies[$configured_currency])) ? $configured_currency : '';
+
+        $currency_settings = $this->get_effective_location_currency_settings($term_id);
+        $mode = $this->normalize_location_rate_mode(get_term_meta($term_id, 'location_currency_rate_mode', true));
+        $position = (string) $currency_settings['position'];
+        $symbol = (string) $currency_settings['symbol'];
+
+        $prefix = $symbol !== '' ? $symbol : (string) $currency_settings['currency'];
+
+        return array(
+            'term_id' => $term_id,
+            'rate' => $this->get_location_currency_rate_value_for_term($term_id),
+            'mode' => $mode,
+            'is_auto' => $mode === 'auto',
+            'currency' => (string) $currency_settings['currency'],
+            'currency_selected' => $currency_selected,
+            'position' => $position,
+            'symbol_prefix' => $prefix,
+            'symbol_suffix' => '',
+        );
+    }
+
+    private function fetch_currency_rate_from_remote(string $from_currency, string $to_currency): ?float
+    {
+        $from_currency = strtoupper(trim($from_currency));
+        $to_currency = strtoupper(trim($to_currency));
+
+        if ($from_currency === '' || $to_currency === '') {
+            return null;
+        }
+
+        if ($from_currency === $to_currency) {
+            return 1.0;
+        }
+
+        $cache_key = 'mulopimfwc_currency_rate_' . strtolower($from_currency . '_' . $to_currency);
+        $cached = get_transient($cache_key);
+        if (is_numeric($cached) && (float) $cached > 0) {
+            return (float) $cached;
+        }
+
+        $request_args = array(
+            'timeout' => 12,
+            'user-agent' => 'MULOPIMFWC/' . (defined('mulopimfwc_VERSION') ? mulopimfwc_VERSION : '1.0'),
+        );
+
+        $sources = array(
+            array(
+                'url' => 'https://open.er-api.com/v6/latest/' . rawurlencode($from_currency),
+                'parser' => static function ($body) use ($to_currency) {
+                    if (!is_array($body) || empty($body['rates']) || !is_array($body['rates'])) {
+                        return null;
+                    }
+                    if (!isset($body['rates'][$to_currency]) || !is_numeric($body['rates'][$to_currency])) {
+                        return null;
+                    }
+
+                    $rate = (float) $body['rates'][$to_currency];
+                    return $rate > 0 ? $rate : null;
+                },
+            ),
+            array(
+                'url' => 'https://www.floatrates.com/daily/' . strtolower($from_currency) . '.json',
+                'parser' => static function ($body) use ($to_currency) {
+                    $target_key = strtolower($to_currency);
+                    if (!is_array($body) || empty($body[$target_key]) || !is_array($body[$target_key])) {
+                        return null;
+                    }
+                    if (!isset($body[$target_key]['rate']) || !is_numeric($body[$target_key]['rate'])) {
+                        return null;
+                    }
+
+                    $rate = (float) $body[$target_key]['rate'];
+                    return $rate > 0 ? $rate : null;
+                },
+            ),
+        );
+
+        foreach ($sources as $source) {
+            $response = wp_safe_remote_get($source['url'], $request_args);
+            if (is_wp_error($response)) {
+                continue;
+            }
+
+            $http_code = (int) wp_remote_retrieve_response_code($response);
+            if ($http_code < 200 || $http_code >= 300) {
+                continue;
+            }
+
+            $body = wp_remote_retrieve_body($response);
+            if (!is_string($body) || $body === '') {
+                continue;
+            }
+
+            $decoded = json_decode($body, true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+
+            $rate = $source['parser']($decoded);
+            if (!is_numeric($rate) || (float) $rate <= 0) {
+                continue;
+            }
+
+            $rate = (float) $rate;
+            set_transient($cache_key, $rate, HOUR_IN_SECONDS);
+            return $rate;
+        }
+
+        return null;
+    }
+
+    public function ajax_sync_currency_rate()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array(
+                'message' => __('You do not have permission to sync exchange rates.', 'multi-location-product-and-inventory-management-pro'),
+            ), 403);
+        }
+
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'mulopimfwc_sync_currency_rate')) {
+            wp_send_json_error(array(
+                'message' => __('Invalid request. Please refresh the page and try again.', 'multi-location-product-and-inventory-management-pro'),
+            ), 403);
+        }
+
+        $currencies = $this->get_currency_options();
+        $default_currency = $this->get_default_currency_code();
+
+        $from_currency = isset($_POST['from_currency']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['from_currency']))) : $default_currency;
+        $to_currency = isset($_POST['to_currency']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['to_currency']))) : $default_currency;
+
+        if ($from_currency === '' || !isset($currencies[$from_currency])) {
+            $from_currency = $default_currency;
+        }
+
+        if ($to_currency === '' || !isset($currencies[$to_currency])) {
+            wp_send_json_error(array(
+                'message' => __('Please select a valid target currency first.', 'multi-location-product-and-inventory-management-pro'),
+            ), 400);
+        }
+
+        if ($from_currency === $to_currency) {
+            wp_send_json_success(array(
+                'rate' => '1',
+                'from_currency' => $from_currency,
+                'to_currency' => $to_currency,
+                'message' => sprintf(
+                    /* translators: 1: source currency code, 2: target currency code */
+                    __('Rate synced for %1$s -> %2$s.', 'multi-location-product-and-inventory-management-pro'),
+                    $from_currency,
+                    $to_currency
+                ),
+            ));
+        }
+
+        $rate = $this->fetch_currency_rate_from_remote($from_currency, $to_currency);
+        if (!is_numeric($rate) || (float) $rate <= 0) {
+            wp_send_json_error(array(
+                'message' => __('Unable to fetch the latest exchange rate right now. Please try again.', 'multi-location-product-and-inventory-management-pro'),
+            ), 500);
+        }
+
+        wp_send_json_success(array(
+            'rate' => $this->format_location_currency_rate_input($rate),
+            'from_currency' => $from_currency,
+            'to_currency' => $to_currency,
+            'message' => sprintf(
+                /* translators: 1: source currency code, 2: target currency code */
+                __('Rate synced for %1$s -> %2$s.', 'multi-location-product-and-inventory-management-pro'),
+                $from_currency,
+                $to_currency
+            ),
+        ));
+    }
+
+    /**
+     * Normalize aliases from textarea/json/meta into a unique string list.
+     *
+     * @param mixed $raw_aliases
+     * @return array
+     */
+    private function normalize_location_aliases($raw_aliases)
+    {
+        $items = [];
+
+        if (is_array($raw_aliases)) {
+            array_walk_recursive($raw_aliases, function ($value) use (&$items) {
+                if (is_scalar($value)) {
+                    $items[] = (string) $value;
+                }
+            });
+        } elseif (is_string($raw_aliases)) {
+            $raw_aliases = trim($raw_aliases);
+            if ($raw_aliases !== '') {
+                $decoded = json_decode($raw_aliases, true);
+                if (is_array($decoded)) {
+                    return $this->normalize_location_aliases($decoded);
+                }
+                $parts = preg_split('/[\r\n,;|]+/', $raw_aliases);
+                if (is_array($parts)) {
+                    $items = $parts;
+                }
+            }
+        }
+
+        $items = array_map(function ($value) {
+            return sanitize_text_field((string) $value);
+        }, $items);
+
+        $items = array_values(array_filter(array_unique($items), function ($value) {
+            return trim($value) !== '';
+        }));
+
+        return $items;
     }
     /**
      * Add custom fields when editing a location
@@ -589,6 +1062,81 @@ class MULOPIMFWC_Admin
         <?php endif; ?>
 
         <tr class="form-field">
+            <th scope="row"><label for="location_currency"><?php esc_html_e('Currency', 'multi-location-product-and-inventory-management-pro'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <select disabled name="location_currency" id="location_currency" class="mulopimfwc-select2" style="min-width: 320px;" data-placeholder="<?php esc_attr_e('Search currency...', 'multi-location-product-and-inventory-management-pro'); ?>">
+                    <option value="" <?php selected((string) $location_currency, ''); ?>><?php echo esc_html(sprintf(/* translators: %s: default currency label (e.g. "USD - US Dollar") */ __('Default Value (%s) - No Changes', 'multi-location-product-and-inventory-management-pro'), $default_currency_label)); ?></option>
+                    <?php foreach ($currencies as $currency_code => $currency_name): ?>
+                        <?php
+                        $currency_code = strtoupper((string) $currency_code);
+                        $currency_symbol = $this->get_unfiltered_currency_symbol($currency_code);
+                        $currency_label = $currency_code . ' - ' . $currency_name;
+                        if ($currency_symbol !== '') {
+                            $currency_label .= ' (' . $currency_symbol . ')';
+                        }
+                        ?>
+                        <option value="<?php echo esc_attr($currency_code); ?>" <?php selected(strtoupper((string) $location_currency), $currency_code); ?>>
+                            <?php echo esc_html($currency_label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php esc_html_e('Select currency for this location. ', 'multi-location-product-and-inventory-management-pro'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="location_currency_position"><?php esc_html_e('Currency Position', 'multi-location-product-and-inventory-management-pro'); ?></label></th>
+            <td class="mulopimfwc_pro_only"s>
+                <select disabled name="location_currency_position" id="location_currency_position" style="min-width: 220px;">
+                    <option value=""><?php echo esc_html(sprintf(/* translators: %s: currency position label */ __('Default (%s)', 'multi-location-product-and-inventory-management-pro'), $currency_positions[$default_currency_position])); ?></option>
+                    <?php foreach ($currency_positions as $position_key => $position_label): ?>
+                        <option value="<?php echo esc_attr($position_key); ?>" <?php selected($location_currency_position, $position_key); ?>>
+                            <?php echo esc_html($position_label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description"><?php esc_html_e('Set where currency symbol appears for this location.', 'multi-location-product-and-inventory-management-pro'); ?></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="location_currency_rate"><?php esc_html_e('Rate', 'multi-location-product-and-inventory-management-pro'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <div class="mulopimfwc-currency-rate-wrap" style="display:flex;align-items:center;gap:8px;max-width:430px;">
+                    <input disabled
+                        type="number"
+                        name="location_currency_rate"
+                        id="location_currency_rate"
+                        value="<?php echo esc_attr($location_currency_rate); ?>"
+                        min="0.000001"
+                        step="0.000001"
+                        class="mulopimfwc-currency-rate-value"
+                        style="width:140px;" />
+                    <select disabled name="location_currency_rate_mode" id="location_currency_rate_mode" class="mulopimfwc-currency-rate-mode" style="width:110px;">
+                        <?php foreach ($rate_mode_options as $mode_key => $mode_label): ?>
+                            <option value="<?php echo esc_attr($mode_key); ?>" <?php selected($location_currency_rate_mode, $mode_key); ?>><?php echo esc_html($mode_label); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" class="button mulopimfwc-sync-rate" title="<?php esc_attr_e('Sync latest rate', 'multi-location-product-and-inventory-management-pro'); ?>" aria-label="<?php esc_attr_e('Sync latest rate', 'multi-location-product-and-inventory-management-pro'); ?>" style="min-width:36px;padding:0 8px;">
+                        <span class="dashicons dashicons-update" style="margin-top:3px;"></span>
+                    </button>
+                </div>
+                <p class="description">
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %s: WooCommerce default currency code */
+                            __('Rate from WooCommerce currency (%s) to selected currency. Use Sync when Auto is selected.', 'multi-location-product-and-inventory-management-pro'),
+                            $default_currency_code
+                        )
+                    );
+                    ?>
+                </p>
+                <p class="description mulopimfwc-currency-rate-status" style="display:none;"></p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
             <th scope="row"><label for="tax_class"><?php _e('Tax Class', 'multi-location-product-and-inventory-management'); ?></label></th>
             <td class="mulopimfwc_pro_only">
                 <select disabled name="tax_class" id="tax_class" style="min-width: 220px;">
@@ -613,6 +1161,20 @@ class MULOPIMFWC_Admin
             <td>
                 <input type="number" name="display_order" id="display_order" value="<?php echo esc_attr($display_order); ?>" min="0" step="1" />
                 <p class="description"><?php _e('Enter a number to control the order of this location (smaller numbers appear first)', 'multi-location-product-and-inventory-management'); ?></p>
+            </td>
+        </tr>
+        <?php
+        $is_active = get_term_meta($term->term_id, 'is_active', true);
+        $is_active = ($is_active === '' || $is_active === '1' || $is_active === true) ? '1' : '0';
+        ?>
+        <tr class="form-field">
+            <th scope="row"><label for="is_active"><?php esc_html_e('Status', 'multi-location-product-and-inventory-management-pro'); ?></label></th>
+            <td class="mulopimfwc_pro_only">
+                <select disabled name="is_active" id="is_active">
+                    <option value="1" <?php selected($is_active, '1'); ?>><?php esc_html_e('Active', 'multi-location-product-and-inventory-management-pro'); ?></option>
+                    <option value="0" <?php selected($is_active, '0'); ?>><?php esc_html_e('Inactive', 'multi-location-product-and-inventory-management-pro'); ?></option>
+                </select>
+                <p class="description"><?php esc_html_e('Set whether this location is active or inactive', 'multi-location-product-and-inventory-management-pro'); ?></p>
             </td>
         </tr>
 <?php
@@ -1414,7 +1976,6 @@ class MULOPIMFWC_Admin
             : get_option('mulopimfwc_display_options', []);
 
         $enable_location_stock = isset($options['enable_location_stock']) && $options['enable_location_stock'] === 'on';
-        $enable_location_price = isset($options['enable_location_price']) && $options['enable_location_price'] === 'on';
         $new_location_id = (int) $new_location_term->term_id;
 
         $items_updated = 0;
@@ -1473,39 +2034,6 @@ class MULOPIMFWC_Admin
                     $product = wc_get_product($target_id);
                     $updated_stock = mulopimfwc_get_reduced_location_stock($product ?: $target_id, $new_location_id, $new_stock, $quantity);
                     update_post_meta($target_id, '_location_stock_' . $new_location_id, $updated_stock);
-                }
-            }
-
-            $old_price = (float) $item->get_subtotal();
-            $new_price = $old_price;
-
-            if ($enable_location_price) {
-                $location_sale_price = get_post_meta($target_id, '_location_sale_price_' . $new_location_id, true);
-                $location_regular_price = get_post_meta($target_id, '_location_regular_price_' . $new_location_id, true);
-
-                if ($location_sale_price !== '' && $location_sale_price !== null) {
-                    $new_price_per_unit = (float) $location_sale_price;
-                } elseif ($location_regular_price !== '' && $location_regular_price !== null) {
-                    $new_price_per_unit = (float) $location_regular_price;
-                } else {
-                    $product_obj = wc_get_product($target_id);
-                    if ($product_obj) {
-                        $sale_price = $product_obj->get_sale_price();
-                        $regular_price = $product_obj->get_regular_price();
-                        $new_price_per_unit = $sale_price !== '' ? (float) $sale_price : (float) $regular_price;
-                    } else {
-                        $new_price_per_unit = $quantity > 0 ? ((float) $old_price / (float) $quantity) : 0.0;
-                    }
-                }
-
-                $new_subtotal = $new_price_per_unit * (float) $quantity;
-                $item->set_subtotal($new_subtotal);
-                $item->set_total($new_subtotal);
-                $item->update_meta_data('_price', $new_price_per_unit);
-                $new_price = $new_subtotal;
-
-                if ((string) $old_price !== (string) $new_price) {
-                    $price_changed = true;
                 }
             }
 

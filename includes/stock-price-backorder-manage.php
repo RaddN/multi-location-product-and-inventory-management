@@ -21,22 +21,7 @@ function mulopimfwc_add_purchase_price_field()
             'desc_tip'    => true,
             'description' => __('Enter the purchase price for this product.', 'multi-location-product-and-inventory-management'),
             'type'        => 'number',
-            'wrapper_class' => 'show_if_simple show_if_external',
-            'custom_attributes' => array(
-                'step' => 'any',
-                'min'  => '0'
-            )
-        )
-    );
-
-    woocommerce_wp_text_input(
-        array(
-            'id'          => '_purchase_quantity',
-            'label'       => __('Total Quantity Purchase', 'multi-location-product-and-inventory-management'),
-            'desc_tip'    => true,
-            'description' => __('Enter the total quantity purchase for this product.', 'multi-location-product-and-inventory-management'),
-            'type'        => 'number',
-            'wrapper_class' => 'show_if_simple show_if_external',
+            'wrapper_class' => 'show_if_simple show_if_external mulopimfwc_pro_only',
             'custom_attributes' => array(
                 'step' => 'any',
                 'min'  => '0'
@@ -178,12 +163,12 @@ add_action('woocommerce_product_data_panels', function () {
                                     <input type="number" name="location_stock[<?php echo esc_attr($location->term_id); ?>]"
                                         value="<?php echo esc_attr($location_stock); ?>" step="1" min="0">
                                 </td>
-                                <td>
-                                    <input type="text" name="location_regular_price[<?php echo esc_attr($location->term_id); ?>]"
+                                <td class="mulopimfwc_pro_only">
+                                    <input disabled type="text" name="location_regular_price[<?php echo esc_attr($location->term_id); ?>]"
                                         value="<?php echo esc_attr($location_regular_price ? $location_regular_price : ($location_regular_price === '' ? $regular_price : '')); ?>" class="wc_input_price">
                                 </td>
-                                <td>
-                                    <input type="text" name="location_sale_price[<?php echo esc_attr($location->term_id); ?>]"
+                                <td class="mulopimfwc_pro_only">
+                                    <input disabled type="text" name="location_sale_price[<?php echo esc_attr($location->term_id); ?>]"
                                         value="<?php echo esc_attr($location_sale_price ? $location_sale_price : ($location_sale_price === '' ? $sale_price : '')); ?>" class="wc_input_price">
                                 </td>
 
@@ -291,14 +276,14 @@ add_action('woocommerce_product_after_variable_attributes', function ($loop, $va
                                     value="<?php echo esc_attr($location_stock); ?>"
                                     class="short" step="1" min="0">
                             </td>
-                            <td>
-                                <input type="text"
+                            <td class="mulopimfwc_pro_only">
+                                <input disabled type="text"
                                     name="variation_location_regular_price[<?php echo esc_attr($loop); ?>][<?php echo esc_attr($location->term_id); ?>]"
                                     value="<?php echo esc_attr($location_regular_price); ?>"
                                     class="wc_input_price short">
                             </td>
-                            <td>
-                                <input type="text"
+                            <td class="mulopimfwc_pro_only">
+                                <input disabled type="text"
                                     name="variation_location_sale_price[<?php echo esc_attr($loop); ?>][<?php echo esc_attr($location->term_id); ?>]"
                                     value="<?php echo esc_attr($location_sale_price); ?>"
                                     class="wc_input_price short">
@@ -587,65 +572,6 @@ function mulopimfwc_get_cart_item_location($product_id, $variation_id = 0)
     }
 
     return null;
-}
-
-if (!is_admin()) {
-    // Override regular price for simple products
-    add_filter('woocommerce_product_get_regular_price', function ($price, $product) {
-        global $mulopimfwc_options;
-        if ($product->is_type('variation') || !isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
-            return $price; // Handle variations separately
-        }
-        $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
-        $terms = array_map('rawurldecode', wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
-        if ($enable_all_locations === 'on' && empty($terms)) {
-            return $price; // Use default WooCommerce price
-        }
-
-        $location_slug = mulopimfwc_get_current_store_location();
-        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
-            return $price;
-        }
-        $location_id = mulopimfwc_get_location_term_id($location_slug);
-
-        if (!$location_id || !isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
-            return $price;
-        }
-
-        $location_price = get_post_meta($product->get_id(), '_location_regular_price_' . $location_id, true);
-
-        return !empty($location_price) ? $location_price : $price;
-    }, 10, 2);
-    // Override sale price for simple products
-    add_filter('woocommerce_product_get_sale_price', function ($price, $product) {
-        global $mulopimfwc_options;
-        if ($product->is_type('variation') || !isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
-            return $price; // Handle variations separately
-        }
-
-        global $mulopimfwc_options;
-        $enable_all_locations = isset($mulopimfwc_options['enable_all_locations']) ? $mulopimfwc_options['enable_all_locations'] : 'off';
-
-        $terms = array_map('rawurldecode', wp_get_object_terms($product->get_id(), 'mulopimfwc_store_location', ['fields' => 'slugs']));
-
-        if ($enable_all_locations === 'on' && empty($terms)) {
-            return $price; // Use default WooCommerce price
-        }
-
-        $location_slug = mulopimfwc_get_current_store_location();
-        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
-            return $price;
-        }
-        $location_id = mulopimfwc_get_location_term_id($location_slug);
-
-        if (!$location_id) {
-            return $price;
-        }
-
-        $location_price = get_post_meta($product->get_id(), '_location_sale_price_' . $location_id, true);
-
-        return !empty($location_price) ? $location_price : $price;
-    }, 10, 2);
 }
 
 
@@ -1112,185 +1038,6 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
 
     return $passed;
 }, 10, 5);
-if (!is_admin()) {
-    // Override the final price for simple products
-    add_filter('woocommerce_product_get_price', function ($price, $product) {
-        global $mulopimfwc_options;
-        if ($product->is_type('variation') || !isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
-            return $price; // Handle variations separately
-        }
-
-        // Get raw price from database
-        $raw_sale_price = get_post_meta($product->get_id(), '_sale_price', true);
-        $raw_regular_price = get_post_meta($product->get_id(), '_regular_price', true);
-        $raw_price = $raw_sale_price ? $raw_sale_price : $raw_regular_price;
-
-        // If incoming price differs from raw price, another plugin modified it
-        // In that case, respect the other plugin's price
-        if ($price != $raw_price && !empty($price)) {
-            return $price; // Another plugin has already modified the price
-        }
-
-        // Check if we're in cart context and have cart item location data
-        $cart_item_location = mulopimfwc_get_cart_item_location($product->get_id());
-
-        // Use cart item location if available, otherwise fall back to current location
-        $location_slug = $cart_item_location ? $cart_item_location : null;
-
-        if (!$location_slug && is_cart() && is_checkout()) {
-            return $price;
-        } else {
-            $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
-        }
-
-        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
-            return $price;
-        }
-
-        $location_id = mulopimfwc_get_location_term_id($location_slug);
-
-        if (!$location_id) {
-            return $price;
-        }
-
-        // First check if there's a location-specific sale price
-        $location_sale_price = get_post_meta($product->get_id(), '_location_sale_price_' . $location_id, true);
-
-        // If there's a valid sale price and it's not empty, use it
-        if (!empty($location_sale_price)) {
-            return $location_sale_price;
-        }
-
-        // Otherwise, check for location-specific regular price
-        $location_regular_price = get_post_meta($product->get_id(), '_location_regular_price_' . $location_id, true);
-
-        // If there's a location-specific regular price, use it
-        if (!empty($location_regular_price)) {
-            return $location_regular_price;
-        }
-
-        // If no location-specific prices, return the original price
-        return $price;
-    }, 10, 2);
-
-    // Override the final price for variation products
-    add_filter('woocommerce_product_variation_get_price', function ($price, $variation) {
-        global $mulopimfwc_options;
-
-        if (!isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
-            return $price;
-        }
-
-        // Get raw price from database
-        $raw_sale_price = get_post_meta($variation->get_id(), '_sale_price', true);
-        $raw_regular_price = get_post_meta($variation->get_id(), '_regular_price', true);
-        $raw_price = $raw_sale_price ? $raw_sale_price : $raw_regular_price;
-
-        // If incoming price differs from raw price, another plugin modified it
-        // In that case, respect the other plugin's price
-        if ($price != $raw_price && !empty($price)) {
-            return $price; // Another plugin has already modified the price
-        }
-
-        // Check if we're in cart context and have cart item location data
-        $cart_item_location = mulopimfwc_get_cart_item_location($variation->get_parent_id(), $variation->get_id());
-
-        // Use cart item location if available, otherwise fall back to current location
-        $location_slug = $cart_item_location ? $cart_item_location : null;
-
-        if (!$location_slug && is_cart() && is_checkout()) {
-            return $price;
-        } else {
-            $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
-        }
-
-        if (!mulopimfwc_is_location_assigned_to_product($variation, $location_slug)) {
-            return $price;
-        }
-
-        $location_id = mulopimfwc_get_location_term_id($location_slug);
-
-        if (!$location_id) {
-            return $price;
-        }
-
-        // First check if there's a location-specific sale price
-        $location_sale_price = get_post_meta($variation->get_id(), '_location_sale_price_' . $location_id, true);
-
-        // If there's a valid sale price and it's not empty, use it
-        if (!empty($location_sale_price)) {
-            return $location_sale_price;
-        }
-
-        // Otherwise, check for location-specific regular price
-        $location_regular_price = get_post_meta($variation->get_id(), '_location_regular_price_' . $location_id, true);
-
-        // If there's a location-specific regular price, use it
-        if (!empty($location_regular_price)) {
-            return $location_regular_price;
-        }
-
-        // If no location-specific prices, return the original price
-        return $price;
-    }, 10, 2);
-
-    // We also need to ensure variation price sync works correctly
-    add_filter('woocommerce_variation_prices', function ($prices, $product, $for_display) {
-        global $mulopimfwc_options;
-
-        if (!isset($mulopimfwc_options['enable_location_price']) || (isset($mulopimfwc_options['enable_location_price']) && $mulopimfwc_options['enable_location_price'] !== 'on')) {
-            return $prices;
-        }
-
-
-        // Check if we're in cart context and have cart item location data
-        $cart_item_location = mulopimfwc_get_cart_item_location($product->get_id());
-
-        // Use cart item location if available, otherwise fall back to current location
-        $location_slug = $cart_item_location ? $cart_item_location : null;
-
-        if (!$location_slug && is_cart() && is_checkout()) {
-            return $prices;
-        } else {
-            $location_slug = $location_slug ? $location_slug : mulopimfwc_get_current_store_location();
-        }
-
-        if (!mulopimfwc_is_location_assigned_to_product($product, $location_slug)) {
-            return $prices;
-        }
-
-        $location_id = mulopimfwc_get_location_term_id($location_slug);
-
-        if (!$location_id) {
-            return $prices;
-        }
-
-        if (!empty($prices['regular_price']) && !empty($prices['sale_price']) && !empty($prices['price'])) {
-            $variation_ids = array_keys($prices['regular_price']);
-
-            foreach ($variation_ids as $variation_id) {
-                // Update regular price
-                $location_regular_price = get_post_meta($variation_id, '_location_regular_price_' . $location_id, true);
-                if (!empty($location_regular_price)) {
-                    $prices['regular_price'][$variation_id] = $location_regular_price;
-                }
-
-                // Update sale price
-                $location_sale_price = get_post_meta($variation_id, '_location_sale_price_' . $location_id, true);
-                if (!empty($location_sale_price)) {
-                    $prices['sale_price'][$variation_id] = $location_sale_price;
-                    // Also update the final price when sale price exists
-                    $prices['price'][$variation_id] = $location_sale_price;
-                } elseif (!empty($location_regular_price)) {
-                    // If no sale price but has location regular price, update the final price
-                    $prices['price'][$variation_id] = $location_regular_price;
-                }
-            }
-        }
-
-        return $prices;
-    }, 10, 3);
-}
 
 // show prevent message for current location
 
